@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import scrapy
 
+# 通用爬虫
+from scrapy.contrib.spiders import CrawlSpider, Rule
+
 
 class DmozSpider(scrapy.Spider):
     name = 'dmoz'
