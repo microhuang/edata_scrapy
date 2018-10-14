@@ -4,6 +4,7 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
 from scrapy_redis.spiders import RedisSpider
+from scrapy.http import Request
 
 
 class EdataSpider(RedisSpider):
@@ -11,6 +12,9 @@ class EdataSpider(RedisSpider):
     redis_key = 'edata:start_urls'
 
     def parse(self, response):
+        next_url = response.url
+        if next_url:
+            yield Request(url=next_url, callback=self.parse, dont_filter=True)
         # do stuff
         pass
 
