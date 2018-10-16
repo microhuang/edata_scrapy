@@ -47,3 +47,15 @@ class SinaItem(scrapy.Item):
         #item['response'] = response
         item['title'] = 'sina'
         return item
+    
+class CsdnArticleItem(scrapy.Item):
+    title = scrapy.Field()
+
+    @staticmethod
+    def extract(response):
+        item = CsdnArticleItem()
+        #todo
+        #item['response'] = response
+        item['title'] = response.xpath('//title/text()').extract()
+        return item
+

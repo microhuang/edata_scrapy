@@ -6,7 +6,7 @@ from scrapy.http import Request
 
 from scrapy_redis.spiders import RedisSpider
 
-from tutorial.items import BaiduItem
+from tutorial.items import *
 
 import re
 
@@ -29,22 +29,26 @@ class EdataSpider(RedisSpider):
                       'https://www.baidu.com/':'Baidu',
                       'http://www.sina.com.cn/':'Sina',
                       #re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
+                      re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):'CsdnArticle',
                       }
 
     def parse(self, response):
         #提取内容
         item = self.__extract_item(response)
+        print(item)
         if item:
             yield item
 
         #提取url
         next_url = self.__extract_url(response)
+        '''
         if 'url' in next_url and next_url['url']:
             if not next_url['dont_filter']:
                 next_url['dont_filter'] = False
             req = Request(url=next_url['url'], callback=self.parse, dont_filter=next_url['dont_filter'])
             if req:
                 yield req
+        '''
 
     def __extract_url(self, response):
         #请求资源匹配
@@ -53,11 +57,13 @@ class EdataSpider(RedisSpider):
         try:
             for k in self.request_res_route:
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
-                    url = eval(self.request_res_route[k]+'Next').extract(response)
+                    url = eval(self.request_res_route[k]+'Next').extract(response,self)
+                    for r in url:
+                        pass
                     break
         except KeyError:
             pass
-        except:
+        #except:
             pass
             
         return url
@@ -69,11 +75,12 @@ class EdataSpider(RedisSpider):
         try:
             for k in self.item_res_route:
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
+                    #print(response.body)
                     item = eval(self.item_res_route[k]+'Item').extract(response)
                     break
         except KeyError:
             pass
-        except:
+        #except:
             pass
 
         return item
@@ -107,16 +114,24 @@ class SinaNext(object):
 
 class BaiduListNext(object):
     @staticmethod
-    def extract(response):
+    def extract(response,spider):
         next_url = None
+        dont_filter = True
+        domain='http://www.baidu.com'
+        if response.url.startswith('https://www.baidu.com/'):
+            domain='https://www.baidu.com'
         #todo
-        r_next_url = re.search(r'href="(.*?)"',str(response.body, encoding='utf-8'))
-        if r_next_url:
-            next_url = r_next_url.group(1)
+        #next_urls = re.findall(r'<a .*?href="(.*?)"',str(response.body, encoding='utf-8'))
+        next_urls = re.finditer(r'<a .*?href="(.*?)"',str(response.body, encoding='utf-8'))
+        for next_url in next_urls:
+            next_url = next_url.group(1)
+            if 'javascript:;'==next_url or next_url.startswith('#'):
+                continue
             if next_url.startswith('/'):
-                next_url = 'http://www.baidu.com'+next_url
-        dont_filter = False
-        return {'url':next_url,'dont_filter':dont_filter}
+                next_url=domain+next_url
+            #print(next_url)
+            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+            yield req
     
 
 '''
