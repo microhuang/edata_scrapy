@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Define here the models for your scraped items
-#
-# See documentation in:
-# https://doc.scrapy.org/en/latest/topics/items.html
 
 from scrapy.http import Request
 
@@ -11,6 +7,7 @@ import re
 
 
 class LocalNext(object):
+    #必须由yield Request返回
     @staticmethod
     def extract(response,spider):
         #todo
@@ -20,6 +17,7 @@ class LocalNext(object):
     
 #百度url页面的next提取逻辑
 class BaiduNext(object):
+    #必须由yield Request返回
     @staticmethod
     def extract(response,spider):
         #todo
@@ -28,6 +26,7 @@ class BaiduNext(object):
         return {'url':next_url,'dont_filter':dont_filter}
 
 class SinaNext(object):
+    #必须由yield Request返回
     @staticmethod
     def extract(response,spider):
         #todo
@@ -36,6 +35,7 @@ class SinaNext(object):
         return {'url':next_url,'dont_filter':dont_filter}
 
 class BaiduListNext(object):
+    #必须由yield Request返回
     @staticmethod
     def extract(response,spider):
         next_url = None

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 import scrapy
 from scrapy.spiders import CrawlSpider
 from scrapy.http import Request
@@ -39,17 +40,21 @@ class EdataSpider(RedisSpider):
     '''
 
     def __init__(self):
-        #可闲时更新配置
+        #空闲时更新配置
         dispatcher.connect(self.setup, signals.spider_idle)
         pass
 
     def setup(self):
         #从配置库获取这些数据
+        # url => next_url
+        # 1、精确匹配，2、正则匹配
         self.request_res_route = {'http://localhost:8081/':'Local',
                          'https://www.baidu.com/':'Baidu',
                          'http://www.sina.com.cn/':'Sina',
                          re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
                          }
+        # url => item
+        # 1、精确匹配，2、正则匹配
         self.item_res_route = {'http://localhost:8081/':'Local',
                       'https://www.baidu.com/':'Baidu',
                       'http://www.sina.com.cn/':'Sina',
@@ -61,7 +66,6 @@ class EdataSpider(RedisSpider):
     def parse(self, response):
         #提取内容
         item = self.__extract_item(response)
-        #print(44444)
         if item:
             #print(item)
             yield item
@@ -103,9 +107,6 @@ class EdataSpider(RedisSpider):
         
         try:
             for k in self.item_res_route:
-                #print(33333)
-                #print(response.url)
-                #print(444444)
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
                     #print(response.url)
                     item = eval(self.item_res_route[k]+'Item').extract(response)
