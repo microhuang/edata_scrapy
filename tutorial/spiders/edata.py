@@ -7,6 +7,7 @@ from scrapy.http import Request
 from scrapy_redis.spiders import RedisSpider
 
 from tutorial.items import *
+from tutorial.nexts import *
 
 import re
 
@@ -92,6 +93,7 @@ class EdataSpider(RedisSpider):
         return item
     
 
+'''
 #todo：以下建议模块化
 class LocalNext(object):
     @staticmethod
@@ -137,10 +139,11 @@ class BaiduListNext(object):
                 next_url=domain+next_url
             #if next_url.startswith('http://www.baidu.com/link?url'):
             #    print(next_url)
+            #这是一个demo，只对当前页面“百度搜索结果”中的link?链接进行深入爬取
             if next_url.startswith('http://www.baidu.com/link?url='):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
                 yield req
-    
+'''
 
 '''
 #请从items实现
