@@ -6,6 +6,9 @@ from scrapy.http import Request
 
 from scrapy_redis.spiders import RedisSpider
 
+from scrapy import signals
+from scrapy.xlib.pydispatch import dispatcher
+
 from tutorial.items import *
 from tutorial.nexts import *
 
@@ -16,6 +19,7 @@ class EdataSpider(RedisSpider):
     name = 'edata'
     redis_key = 'edata:start_urls'
 
+    '''
     #todo:请从数据库初始化配置
     # url => next_url
     # 1、全匹配，2、正则匹配
@@ -32,7 +36,28 @@ class EdataSpider(RedisSpider):
                       #re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
                       re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):'CsdnArticle',
                       }
+    '''
 
+    def __init__(self):
+        #可闲时更新配置
+        dispatcher.connect(self.foo, signals.spider_idle)
+        pass
+
+    def foo(self):
+        #从配置库获取这些数据
+        self.request_res_route = {'http://localhost:8081/':'Local',
+                         'https://www.baidu.com/':'Baidu',
+                         'http://www.sina.com.cn/':'Sina',
+                         re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
+                         }
+        self.item_res_route = {'http://localhost:8081/':'Local',
+                      'https://www.baidu.com/':'Baidu',
+                      'http://www.sina.com.cn/':'Sina',
+                      #re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
+                      re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):'CsdnArticle',
+                      }
+        pass
+                           
     def parse(self, response):
         #提取内容
         item = self.__extract_item(response)
