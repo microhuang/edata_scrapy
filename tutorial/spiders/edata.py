@@ -40,10 +40,10 @@ class EdataSpider(RedisSpider):
 
     def __init__(self):
         #可闲时更新配置
-        dispatcher.connect(self.foo, signals.spider_idle)
+        dispatcher.connect(self.setup, signals.spider_idle)
         pass
 
-    def foo(self):
+    def setup(self):
         #从配置库获取这些数据
         self.request_res_route = {'http://localhost:8081/':'Local',
                          'https://www.baidu.com/':'Baidu',
