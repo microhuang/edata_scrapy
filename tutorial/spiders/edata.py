@@ -34,7 +34,6 @@ class EdataSpider(RedisSpider):
     def parse(self, response):
         #提取内容
         item = self.__extract_item(response)
-        #print(item)
         if item:
             yield item
 
@@ -43,8 +42,6 @@ class EdataSpider(RedisSpider):
         if 'url' in next_url and next_url['url']:
             if not next_url['dont_filter']:
                 next_url['dont_filter'] = False
-            print(next_url)
-            return None
             req = Request(url=next_url['url'], callback=self.parse, dont_filter=next_url['dont_filter'])
             if req:
                 yield req
@@ -113,10 +110,11 @@ class BaiduListNext(object):
     def extract(response):
         next_url = None
         #todo
-        r_next_url = re.search(r'href=".*?"',str(response.body, encoding='utf-8'))
+        r_next_url = re.search(r'href="(.*?)"',str(response.body, encoding='utf-8'))
         if r_next_url:
-            next_url = r_next_url.group()
-        print(next_url)
+            next_url = r_next_url.group(1)
+            if next_url.startswith('/'):
+                next_url = 'http://www.baidu.com'+next_url
         dont_filter = False
         return {'url':next_url,'dont_filter':dont_filter}
     
