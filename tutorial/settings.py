@@ -90,13 +90,20 @@ ROBOTSTXT_OBEY = False
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 
-'''
 SCHEDULER = "scrapy_redis.scheduler.Scheduler"
+SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.FifoQueue'
+#SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.LifoQueue'
 DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
+SCHEDULER_PERSIST = True
+'''
 ITEM_PIPELINES = {
     'scrapy_redis.pipelines.RedisPipeline': 300
 }
 '''
+
+DOWNLOADER_MIDDLEWARES = {
+    'tutorial.middlewares.EdataDownloaderMiddleware': 543,
+}
 
 
 

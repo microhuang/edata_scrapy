@@ -1,50 +1,132 @@
 # -*- coding: utf-8 -*-
+
 import scrapy
-from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import CrawlSpider, Rule
+from scrapy.spiders import CrawlSpider
+from scrapy.http import Request
 
 from scrapy_redis.spiders import RedisSpider
-from scrapy.http import Request
+
+from tutorial.items import BaiduItem
 
 
 class EdataSpider(RedisSpider):
     name = 'edata'
     redis_key = 'edata:start_urls'
 
-    def parse(self, response):
-        next_url = response.url
-        if next_url:
-            yield Request(url=next_url, callback=self.parse, dont_filter=True)
-        # do stuff
-        pass
+    #todo:请从数据库初始化配置
+    # url => next_url
+    request_res_route = {'http://localhost:8081/':'Local',
+                         'https://www.baidu.com/':'Baidu',
+                         'http://www.sina.com.cn/':'Sina'}
+    # url => item
+    item_res_route = {'http://localhost:8081/':'Local',
+                      'https://www.baidu.com/':'Baidu',
+                      'http://www.sina.com.cn/':'Sina'}
 
+    def parse(self, response):
+        #提取内容
+        item = self.__extract_item(response)
+        print(item)
+        if item:
+            yield item
+
+        #提取url
+        next_url = self.__extract_url(response)
+        if next_url['url']:
+            if not next_url['dont_filter']:
+                next_url['dont_filter'] = False
+            req = Request(url=next_url['url'], callback=self.parse, dont_filter=next_url['dont_filter'])
+            if req:
+                yield req
+
+    def __extract_url(self, response):
+        #请求资源匹配
+        url = ''
+
+        try:
+            url = eval(self.request_res_route[response.url]+'Next').extract(response)
+        except KeyError:
+            pass
+        except:
+            pass
+            
+        return url
+
+    def __extract_item(self, response):
+        #模版资源匹配
+        item = None
+        
+        try:
+            item = eval(self.item_res_route[response.url]+'Item').extract(response)
+        except KeyError:
+            pass
+        except:
+            pass
+
+        return item
+    
+
+#todo：以下建议模块化
+class LocalNext(object):
+    @staticmethod
+    def extract(response):
+        #todo
+        next_url = "http://localhost:8081/"
+        dont_filter = True
+        return {'url':next_url,'dont_filter':dont_filter}
+    
+#百度url页面的next提取逻辑
+class BaiduNext(object):
+    @staticmethod
+    def extract(response):
+        #todo
+        next_url = "https://www.baidu.com/"
+        dont_filter = True
+        return {'url':next_url,'dont_filter':dont_filter}
+
+class SinaNext(object):
+    @staticmethod
+    def extract(response):
+        #todo
+        next_url = "http://www.sina.com.cn/"
+        dont_filter = True
+        return {'url':next_url,'dont_filter':dont_filter}
 
 '''
-class EdataSpider(CrawlSpider):
-    name = 'edata'
-    allowed_domains = ['tech.china.com']
-    start_urls = ['http://tech.china.com/']
+#请从items实现
+class LocalItem(scrapy.Item):
+    title = scrapy.Field()
 
-    rules = (
-        Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),
-    )
+    @staticmethod
+    def extract(response):
+        item = LocalItem()
+        #todo
+        #item['response'] = response
+        item['title'] = 'local'
+        return item
+    
+#百度url页面的item提取逻辑     
+class BaiduItem(scrapy.Item):
+    title = scrapy.Field()
 
-    def __init__(self, *args, **kwargs):
-        print("iiiiiiiiiiiiiiiiiiiiiiiiii")
-        super(EdataSpider, self).__init__(*args, **kwargs)
-        pass
+    @staticmethod
+    def extract(response):
+        item = BaiduItem()
+        #todo
+        #item['response'] = response
+        item['title'] = response.xpath('//title/text()').extract()
+        return item
 
-    def _make_request(self, mframe, hframe, body):
-        print("mmmmmmmmmmmmmmmmmmmmmmmmmm")
-        url = body.decode()
-        return scrapy.Request(url, callback=self.parse)
+class SinaItem(scrapy.Item):
+    title = scrapy.Field()
 
-    def parse_item(self, response):
-        i = {}
-        #i['domain_id'] = response.xpath('//input[@id="sid"]/@value').extract()
-        #i['name'] = response.xpath('//div[@id="name"]').extract()
-        #i['description'] = response.xpath('//div[@id="description"]').extract()
-        return i
+    @staticmethod
+    def extract(response):
+        item = SinaItem()
+        #todo
+        #item['response'] = response
+        item['title'] = 'sina'
+        return item
 '''
 
 

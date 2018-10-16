@@ -101,3 +101,13 @@ class TutorialDownloaderMiddleware(object):
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
+
+# ua\ip\...
+# # IP池请参考： http://pkmishra.github.io/blog/2013/03/18/how-to-run-scrapy-with-TOR-and-multiple-browser-agents-part-1-mac/
+class EdataDownloaderMiddleware(UserAgentMiddleware):
+    pass
+
+    
