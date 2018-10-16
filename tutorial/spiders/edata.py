@@ -8,6 +8,8 @@ from scrapy_redis.spiders import RedisSpider
 
 from tutorial.items import BaiduItem
 
+import re
+
 
 class EdataSpider(RedisSpider):
     name = 'edata'
@@ -15,24 +17,30 @@ class EdataSpider(RedisSpider):
 
     #todo:请从数据库初始化配置
     # url => next_url
+    # 1、全匹配，2、正则匹配
     request_res_route = {'http://localhost:8081/':'Local',
                          'https://www.baidu.com/':'Baidu',
-                         'http://www.sina.com.cn/':'Sina'}
+                         'http://www.sina.com.cn/':'Sina',
+                         re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
+                         }
     # url => item
+    # 1、全匹配，2、正则匹配
     item_res_route = {'http://localhost:8081/':'Local',
                       'https://www.baidu.com/':'Baidu',
-                      'http://www.sina.com.cn/':'Sina'}
+                      'http://www.sina.com.cn/':'Sina',
+                      #re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
+                      }
 
     def parse(self, response):
         #提取内容
         item = self.__extract_item(response)
-        print(item)
+        #print(item)
         if item:
             yield item
 
         #提取url
         next_url = self.__extract_url(response)
-        if next_url['url']:
+        if 'url' in next_url and next_url['url']:
             if not next_url['dont_filter']:
                 next_url['dont_filter'] = False
             req = Request(url=next_url['url'], callback=self.parse, dont_filter=next_url['dont_filter'])
@@ -44,7 +52,10 @@ class EdataSpider(RedisSpider):
         url = ''
 
         try:
-            url = eval(self.request_res_route[response.url]+'Next').extract(response)
+            for k in self.request_res_route:
+                if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
+                    url = eval(self.request_res_route[k]+'Next').extract(response)
+                    break
         except KeyError:
             pass
         except:
@@ -57,7 +68,10 @@ class EdataSpider(RedisSpider):
         item = None
         
         try:
-            item = eval(self.item_res_route[response.url]+'Item').extract(response)
+            for k in self.item_res_route:
+                if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
+                    item = eval(self.item_res_route[k]+'Item').extract(response)
+                    break
         except KeyError:
             pass
         except:
@@ -72,7 +86,7 @@ class LocalNext(object):
     def extract(response):
         #todo
         next_url = "http://localhost:8081/"
-        dont_filter = True
+        dont_filter = False
         return {'url':next_url,'dont_filter':dont_filter}
     
 #百度url页面的next提取逻辑
@@ -81,7 +95,7 @@ class BaiduNext(object):
     def extract(response):
         #todo
         next_url = "https://www.baidu.com/"
-        dont_filter = True
+        dont_filter = False
         return {'url':next_url,'dont_filter':dont_filter}
 
 class SinaNext(object):
@@ -89,8 +103,18 @@ class SinaNext(object):
     def extract(response):
         #todo
         next_url = "http://www.sina.com.cn/"
-        dont_filter = True
+        dont_filter = False
         return {'url':next_url,'dont_filter':dont_filter}
+
+class BaiduListNext(object):
+    @staticmethod
+    def extract(response):
+        print(response.body)
+        #todo
+        next_url = response.xpath('//*[@id="1"]/h3/a')
+        dont_filter = False
+        return {'url':next_url,'dont_filter':dont_filter}
+    
 
 '''
 #请从items实现
