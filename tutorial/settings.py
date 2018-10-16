@@ -102,8 +102,11 @@ ITEM_PIPELINES = {
 
 
 DOWNLOADER_MIDDLEWARES = {
+    'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware' : None,  
     'tutorial.middlewares.EdataDownloaderMiddleware': 543,
 }
+
+#USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
 
 
 

@@ -43,6 +43,8 @@ class EdataSpider(RedisSpider):
         if 'url' in next_url and next_url['url']:
             if not next_url['dont_filter']:
                 next_url['dont_filter'] = False
+            print(next_url)
+            return None
             req = Request(url=next_url['url'], callback=self.parse, dont_filter=next_url['dont_filter'])
             if req:
                 yield req
@@ -109,9 +111,12 @@ class SinaNext(object):
 class BaiduListNext(object):
     @staticmethod
     def extract(response):
-        print(response.body)
+        next_url = None
         #todo
-        next_url = response.xpath('//*[@id="1"]/h3/a')
+        r_next_url = re.search(r'href=".*?"',str(response.body, encoding='utf-8'))
+        if r_next_url:
+            next_url = r_next_url.group()
+        print(next_url)
         dont_filter = False
         return {'url':next_url,'dont_filter':dont_filter}
     
