@@ -35,12 +35,15 @@ class EdataSpider(RedisSpider):
     def parse(self, response):
         #提取内容
         item = self.__extract_item(response)
-        print(item)
+        #print(44444)
         if item:
+            #print(item)
             yield item
 
         #提取url
         next_url = self.__extract_url(response)
+        for req in next_url:
+            yield req
         '''
         if 'url' in next_url and next_url['url']:
             if not next_url['dont_filter']:
@@ -59,7 +62,7 @@ class EdataSpider(RedisSpider):
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
                     url = eval(self.request_res_route[k]+'Next').extract(response,self)
                     for r in url:
-                        pass
+                        yield r
                     break
         except KeyError:
             pass
@@ -74,8 +77,11 @@ class EdataSpider(RedisSpider):
         
         try:
             for k in self.item_res_route:
+                #print(33333)
+                #print(response.url)
+                #print(444444)
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
-                    #print(response.body)
+                    #print(response.url)
                     item = eval(self.item_res_route[k]+'Item').extract(response)
                     break
         except KeyError:
@@ -89,7 +95,7 @@ class EdataSpider(RedisSpider):
 #todo：以下建议模块化
 class LocalNext(object):
     @staticmethod
-    def extract(response):
+    def extract(response,spider):
         #todo
         next_url = "http://localhost:8081/"
         dont_filter = False
@@ -98,7 +104,7 @@ class LocalNext(object):
 #百度url页面的next提取逻辑
 class BaiduNext(object):
     @staticmethod
-    def extract(response):
+    def extract(response,spider):
         #todo
         next_url = "https://www.baidu.com/"
         dont_filter = False
@@ -106,7 +112,7 @@ class BaiduNext(object):
 
 class SinaNext(object):
     @staticmethod
-    def extract(response):
+    def extract(response,spider):
         #todo
         next_url = "http://www.sina.com.cn/"
         dont_filter = False
@@ -125,13 +131,15 @@ class BaiduListNext(object):
         next_urls = re.finditer(r'<a .*?href="(.*?)"',str(response.body, encoding='utf-8'))
         for next_url in next_urls:
             next_url = next_url.group(1)
-            if 'javascript:;'==next_url or next_url.startswith('#'):
+            if 'javascript:;'==next_url or "javascript"==next_url or next_url.startswith('#'):
                 continue
             if next_url.startswith('/'):
                 next_url=domain+next_url
-            #print(next_url)
-            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
-            yield req
+            #if next_url.startswith('http://www.baidu.com/link?url'):
+            #    print(next_url)
+            if next_url.startswith('http://www.baidu.com/link?url='):
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+                yield req
     
 
 '''
