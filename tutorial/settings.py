@@ -102,7 +102,8 @@ ITEM_PIPELINES = {
 
 
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware' : None,  
+    #'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware' : None,  
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware' : None,
     'tutorial.middlewares.EdataDownloaderMiddleware': 543,
 }
 

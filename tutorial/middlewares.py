@@ -138,6 +138,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
 
         for k in spider.request_res_route:
             if k==request.url or isinstance(k, re.Pattern) and re.match(k,request.url):
+                spider.logger.info('request_res_route_key: %s' % k)
                 spider.request_res_route_key = k
                 break
         
@@ -160,7 +161,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             except Exception as e:
                 return HtmlResponse(url=request.url, status=500, request=request)
             else:
-                return HtmlResponse(url=request.url,body=self.browser.page_source,request=request)
+                return HtmlResponse(url=request.url, body=self.browser.page_source, request=request, encoding='utf-8', status=200)
             
 
     

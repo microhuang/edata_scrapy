@@ -125,12 +125,9 @@ class EdataSpider(RedisSpider):
         try:
             for k in self.item_res_route:
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
-                    #print(response.url)
+                    self.logger.info('item_res_route_key: %s' % k)
                     item = eval(self.item_res_route[k]['Item']+'Item').extract(response)
                     self.item_res_route_key = k
-                    #print(2222)
-                    #print(k)
-                    #print(44444)
                     break
         except KeyError:
             pass
