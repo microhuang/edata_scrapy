@@ -112,6 +112,7 @@ from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 class EdataDownloaderMiddleware(UserAgentMiddleware):
     def process_request(self, request, spider):
         ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
+        request.headers.setdefault('User-Agent', ua)
 
         for k in spider.request_res_route:
             if k==request.url or isinstance(k, re.Pattern) and re.match(k,request.url):
@@ -129,7 +130,6 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         if spider.request_res_route_key and spider.request_res_route and 'UA' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UA']:
             ua = spider.request_res_route[spider.request_res_route_key]['UA']
 
-        request.headers.setdefault('User-Agent', ua)
         request.headers['USER_AGENT']=ua
         
 
