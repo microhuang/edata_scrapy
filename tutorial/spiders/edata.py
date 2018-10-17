@@ -2,7 +2,7 @@
 
 
 import scrapy
-from scrapy.spiders import CrawlSpider
+
 from scrapy.http import Request
 
 from scrapy_redis.spiders import RedisSpider
@@ -45,21 +45,21 @@ class EdataSpider(RedisSpider):
         pass
 
     def setup(self):
-        #从配置库获取这些数据
+        #从配置库获取这些数据，配置过多时可以排序优化资源路由算法
         # url => next_url
         # 1、精确匹配，2、正则匹配
-        self.request_res_route = {'http://localhost:8081/':'Local',
-                         'https://www.baidu.com/':'Baidu',
-                         'http://www.sina.com.cn/':'Sina',
-                         re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
+        self.request_res_route = {'http://localhost:8081/':{'Next':'Local','UA':'','Delay':2},
+                         'https://www.baidu.com/':{'Next':'Baidu'},
+                         'http://www.sina.com.cn/':{'Next':'Sina'},
+                         re.compile(r'https://www.baidu.com/s\?wd=\w'):{'Next':'BaiduList'},
                          }
         # url => item
         # 1、精确匹配，2、正则匹配
-        self.item_res_route = {'http://localhost:8081/':'Local',
-                      'https://www.baidu.com/':'Baidu',
-                      'http://www.sina.com.cn/':'Sina',
-                      #re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
-                      re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):'CsdnArticle',
+        self.item_res_route = {'http://localhost:8081/':{'Item':'Local'},
+                      'https://www.baidu.com/':{'Item':'Baidu'},
+                      'http://www.sina.com.cn/':{'Item':'Sina'},
+                      #re.compile(r'https://www.baidu.com/s\?wd=\w'):{'Item':'BaiduList'},
+                      re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):{'Item':'CsdnArticle'},
                       }
         pass
                            

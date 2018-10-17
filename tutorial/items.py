@@ -47,7 +47,8 @@ class SinaItem(scrapy.Item):
         #item['response'] = response
         item['title'] = 'sina'
         return item
-    
+
+# https://blog.csdn.net/\w+/article/details/\d+
 class CsdnArticleItem(scrapy.Item):
     title = scrapy.Field()
 

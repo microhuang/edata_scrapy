@@ -34,6 +34,7 @@ class SinaNext(object):
         dont_filter = False
         return {'url':next_url,'dont_filter':dont_filter}
 
+# www.baidu.com/s?wd=\w
 class BaiduListNext(object):
     #必须由yield Request返回
     @staticmethod
