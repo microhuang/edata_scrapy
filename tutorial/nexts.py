@@ -46,7 +46,12 @@ class BaiduListNext(object):
             domain='https://www.baidu.com'
         #todo
         #next_urls = re.findall(r'<a .*?href="(.*?)"',str(response.body, encoding='utf-8'))
-        next_urls = re.finditer(r'<a .*?href="(.*?)"',str(response.body, encoding='utf-8'))
+        rsp = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            response_body = str(response.body, encoding='gb2312')
+        next_urls = re.finditer(r'<a .*?href="(.*?)"',response_body)
         for next_url in next_urls:
             next_url = next_url.group(1)
             if 'javascript:;'==next_url or "javascript"==next_url or next_url.startswith('#'):
