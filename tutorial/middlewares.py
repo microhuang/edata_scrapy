@@ -107,9 +107,31 @@ class TutorialDownloaderMiddleware(object):
 
 from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+
 # ua\ip\...
 # # IP池请参考： http://pkmishra.github.io/blog/2013/03/18/how-to-run-scrapy-with-TOR-and-multiple-browser-agents-part-1-mac/
 class EdataDownloaderMiddleware(UserAgentMiddleware):
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls(timeout=1, service_args=3)
+        return s
+    
+    def __init__(self, timeout=None, service_args=[]):
+        #只在需要时初始化
+        self.use_selenium = False
+        if self.use_selenium:
+            self.browser = webdriver.PhantomJS(service_args=service_args)
+            #self.browser = webdriver.Chrome()
+            self.wait = WebDriverWait(self.browser, 25)
+            self.use_selenium = True
+
+    def __del__(self):
+        if self.use_selenium:
+            self.browser.close()
+        
     def process_request(self, request, spider):
         ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
         request.headers.setdefault('User-Agent', ua)
@@ -131,6 +153,14 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             ua = spider.request_res_route[spider.request_res_route_key]['UA']
 
         request.headers['USER_AGENT']=ua
-        
+
+        if self.use_selenium:
+            try:
+                spider.browser.get(request.url)
+            except Exception as e:
+                return HtmlResponse(url=request.url, status=500, request=request)
+            else:
+                return HtmlResponse(url=request.url,body=self.browser.page_source,request=request)
+            
 
     
