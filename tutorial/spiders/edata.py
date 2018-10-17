@@ -20,6 +20,11 @@ class EdataSpider(RedisSpider):
     name = 'edata'
     redis_key = 'edata:start_urls'
 
+    request_res_route_key = ''
+    item_res_route_key = ''
+    request_res_route = None
+    item_res_route = None
+    
     '''
     #todo:请从数据库初始化配置
     # url => next_url
@@ -40,7 +45,9 @@ class EdataSpider(RedisSpider):
     '''
 
     def __init__(self):
-        #空闲时更新配置
+        #初始配置
+        self.setup()
+        #注册空闲时更新配置
         dispatcher.connect(self.setup, signals.spider_idle)
         pass
 
@@ -88,12 +95,22 @@ class EdataSpider(RedisSpider):
         url = ''
 
         try:
+            #从Middleware定位request资源路由
+            url = eval(self.request_res_route[self.request_res_route_key]['Next']+'Next').extract(response,self)
+            for r in url:
+                yield r
+            '''
             for k in self.request_res_route:
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
-                    url = eval(self.request_res_route[k]+'Next').extract(response,self)
+                    url = eval(self.request_res_route[k]['Next']+'Next').extract(response,self)
+                    self.request_res_route_key = k
+                    #print(111111)
+                    #print(k)
+                    #print(333333)
                     for r in url:
                         yield r
                     break
+            '''
         except KeyError:
             pass
         #except:
@@ -109,7 +126,11 @@ class EdataSpider(RedisSpider):
             for k in self.item_res_route:
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
                     #print(response.url)
-                    item = eval(self.item_res_route[k]+'Item').extract(response)
+                    item = eval(self.item_res_route[k]['Item']+'Item').extract(response)
+                    self.item_res_route_key = k
+                    #print(2222)
+                    #print(k)
+                    #print(44444)
                     break
         except KeyError:
             pass
