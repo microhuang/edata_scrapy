@@ -116,10 +116,13 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
-        s = cls(timeout=1, service_args=3)
+        #s = cls(timeout=1, service_args=3)
+        s = cls()
         return s
     
-    def __init__(self, timeout=None, service_args=[]):
+    #def __init__(self, timeout=None, service_args=[]):
+    def __init__(self):
+        '''
         #只在需要时初始化
         self.use_selenium = False
         if self.use_selenium:
@@ -127,34 +130,39 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             #self.browser = webdriver.Chrome()
             self.wait = WebDriverWait(self.browser, 25)
             self.use_selenium = True
+        '''
 
     def __del__(self):
-        if self.use_selenium:
+        if self.browser:
             self.browser.close()
         
     def process_request(self, request, spider):
         ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
         request.headers.setdefault('User-Agent', ua)
 
+        # request_res_route
         for k in spider.request_res_route:
             if k==request.url or isinstance(k, re.Pattern) and re.match(k,request.url):
                 spider.logger.info('request_res_route_key: %s' % k)
                 spider.request_res_route_key = k
                 break
-        
-        #todo: start_url因为没有先进入__extract_url获取不到key
-        #print(66666)
-        #print(request.url)
-        #print(spider.request_res_route)
-        #print(spider.request_res_route_key)#?
-        #print(spider.item_res_route_key)#?
-        #print(444444)
-            
+
+        # UA
         if spider.request_res_route_key and spider.request_res_route and 'UA' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UA']:
             ua = spider.request_res_route[spider.request_res_route_key]['UA']
 
         request.headers['USER_AGENT']=ua
 
+        # Selenium
+        if spider.request_res_route_key and spider.request_res_route and 'UseSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UseSelenium']==True:
+            self.use_selenium = True
+            if not self.browser:
+                self.browser = webdriver.PhantomJS()
+                #self.browser = webdriver.Chrome()
+                self.wait = WebDriverWait(self.browser, 25)
+                #self.use_selenium = True
+        else:
+            self.use_selenium = False
         if self.use_selenium:
             try:
                 spider.browser.get(request.url)

@@ -50,7 +50,11 @@ class BaiduListNext(object):
         try:
             response_body = str(response.body, encoding='utf-8')
         except:
-            response_body = str(response.body, encoding='gb2312')
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
         next_urls = re.finditer(r'<a .*?href="(.*?)"',response_body)
         for next_url in next_urls:
             next_url = next_url.group(1)
