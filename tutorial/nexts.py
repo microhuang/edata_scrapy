@@ -3,7 +3,7 @@
 
 from scrapy.http import Request
 
-import re
+import re, time
 
 
 class LocalNext(object):
@@ -56,11 +56,6 @@ class BaiduListNext(object):
                 response_body = str(response.body, encoding='gb2312')
             pass
         next_urls = re.finditer(r'<a .*?href="(.*?)"',response_body)
-
-        #作为start处理：动态搜索/如果不做为start下次重写搜索不一定有这个
-        if spider.request_res_route_key in spider.request_res_route and 'hasStart' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['hasStart']:
-            #todo: is start_url
-            pass
         
         #作为next处理：静态list
         for next_url in next_urls:
@@ -71,6 +66,16 @@ class BaiduListNext(object):
                 next_url=domain+next_url
             #if next_url.startswith('http://www.baidu.com/link?url'):
             #    print(next_url)
+
+            #作为start处理：动态搜索/如果不做为start下次重写搜索不一定有这个
+            if spider.request_res_route_key in spider.request_res_route and 'hasStart' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['hasStart']:
+                #is start_url
+                #todo: queue
+                spider.server.lpush("%(name)s:next_urls"%{'name':spider.name},{'url':next_url,'start':'xxxx','timestamp':int(time.time())})
+                #or todo: db
+                #or todo: api
+                pass
+        
             #这是一个demo，只对当前页面“百度搜索结果”中的link?链接进行深入爬取
             if next_url.startswith('http://www.baidu.com/link?url='):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)

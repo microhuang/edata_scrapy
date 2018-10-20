@@ -7,6 +7,8 @@ from scrapy.http import Request
 
 from scrapy_redis.spiders import RedisSpider
 
+from scrapy.utils.misc import load_object
+
 from scrapy import signals
 #from scrapy.xlib.pydispatch import dispatcher
 from pydispatch import dispatcher
@@ -50,6 +52,10 @@ class EdataSpider(RedisSpider):
         self.setup()
         #注册空闲时更新配置
         dispatcher.connect(self.setup, signals.spider_idle)
+        #
+        #dispatcher.connect(self.spider_idle, signal=signals.item_scraped)
+        #
+        #dispatcher.connect(self.spider_idle, signal=signals.request_scheduled)
         pass
 
     def setup(self):

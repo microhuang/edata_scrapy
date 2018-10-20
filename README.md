@@ -1,5 +1,30 @@
 # 通用爬虫框架
 
+### 架构
+```
+                               -----> (response) -> (item_res_route) -> Item -> 入库
+           （编排/调度）         |
+(User) => task => start -> request -> (response) -> (request_res_route) -> Next
+            ^       ^        ^                                            | | |
+            |       |        |____________________________________________| | |
+            |       |                                                url    | |
+         (queue)    |_______________________________________________________| |
+            |                                                       sigle     |
+            |_________________________________________________________________|
+                                                                     url
+
+task（DB）: 任务池，编排规则由完全独立的业务系统定义
+
+start（queue）: 任务入口
+request（queue）: 任务执行
+
+item_res_route: response to item 路由
+request_res_route: response to url 路由
+
+Item: 内容提取逻辑
+Next: url头组装逻辑、next request url提取逻辑、next task url提取逻辑
+```
+
 ### scrapy crawl edata
 
 ```
