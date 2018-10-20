@@ -89,7 +89,7 @@ class EdataSpider(RedisSpider):
             jurl = json.loads(url)
             url = jurl['url']
             meta = jurl['meta']
-            meta = {'task':123456}
+            #meta = {'task':123456}
         except:
             pass
         
