@@ -71,7 +71,8 @@ class BaiduListNext(object):
             if spider.request_res_route_key in spider.request_res_route and 'hasStart' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['hasStart']:
                 #is start_url
                 #todo: queue
-                spider.server.lpush("%(name)s:next_urls"%{'name':spider.name},{'url':next_url,'start':'xxxx','timestamp':int(time.time())})
+                self.logger.info(response.meta)
+                spider.server.lpush("%(name)s:next_urls"%{'name':spider.name},{'url':next_url,'task':response.meta['task'],'start':'yyyy','timestamp':int(time.time())})
                 #or todo: db
                 #or todo: api
                 pass
@@ -79,5 +80,6 @@ class BaiduListNext(object):
             #这是一个demo，只对当前页面“百度搜索结果”中的link?链接进行深入爬取
             if next_url.startswith('http://www.baidu.com/link?url='):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+                #req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta=response.meta)
                 yield req
 

@@ -139,6 +139,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             self.browser.close()
         
     def process_request(self, request, spider):
+        #print(request.meta)
         #help(self.crawler.engine.downloader)
         ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
         request.headers.setdefault('User-Agent', ua)

@@ -7,6 +7,8 @@ from scrapy.http import Request
 
 from scrapy_redis.spiders import RedisSpider
 
+from scrapy_redis.utils import bytes_to_str
+
 from scrapy.utils.misc import load_object
 
 from scrapy import signals
@@ -76,6 +78,22 @@ class EdataSpider(RedisSpider):
                       re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):{'Item':'CsdnArticle'},
                       }
         pass
+
+    #假设start队列带有meta数据
+    def make_request_from_data(self, data):
+        url = bytes_to_str(data, self.redis_encoding)
+        meta = None
+        try:
+            #{'url':'xxxxx','meta':{}}
+            import json
+            jurl = json.loads(url)
+            url = jurl['url']
+            meta = jurl['meta']
+            meta = {'task':123456}
+        except:
+            pass
+        
+        return Request(url, dont_filter=True, meta=meta)
                            
     def parse(self, response):
         #提取内容
