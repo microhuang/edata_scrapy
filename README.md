@@ -9,7 +9,7 @@
 
 ### 架构
 ```
-                                     -----> (response) -> (item_res_route) -> Item -> 入库
+                                        -----> (response) -> (item_res_route) -> Item -> 入库
            （编排/调度）               |
 (User) => task => start(meta) -> request -> (response) -> (request_res_route) -> Next
             ^       ^              ^                                            | | |
