@@ -8,7 +8,8 @@ from scrapy.http import Request
 from scrapy_redis.spiders import RedisSpider
 
 from scrapy import signals
-from scrapy.xlib.pydispatch import dispatcher
+#from scrapy.xlib.pydispatch import dispatcher
+from pydispatch import dispatcher
 
 from tutorial.items import *
 from tutorial.nexts import *
@@ -55,7 +56,7 @@ class EdataSpider(RedisSpider):
         #从配置库获取这些数据，配置过多时可以排序优化资源路由算法
         # url => next_url: Next、UserAgent、下一个延迟时间、下一次间隔时间/去重时间、使用模拟浏览器
         # 1、精确匹配，2、正则匹配
-        self.request_res_route = {'http://localhost:8081/':{'Next':'Local','UA':'','Delay':2,'Frequency':3600,'UseSelenium':True},
+        self.request_res_route = {'http://localhost:8081/':{'Next':'Local','UA':'','Delay':2,'Frequency':3600,'UseSelenium':True,'cookieLess':True,'hasStart':False},
                          'https://www.baidu.com/':{'Next':'Baidu'},
                          'http://www.sina.com.cn/':{'Next':'Sina'},
                          re.compile(r'https://www.baidu.com/s\?wd=\w'):{'Next':'BaiduList'},

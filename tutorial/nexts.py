@@ -56,6 +56,13 @@ class BaiduListNext(object):
                 response_body = str(response.body, encoding='gb2312')
             pass
         next_urls = re.finditer(r'<a .*?href="(.*?)"',response_body)
+
+        #作为start处理：动态搜索/如果不做为start下次重写搜索不一定有这个
+        if spider.request_res_route_key in spider.request_res_route and 'hasStart' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['hasStart']:
+            #todo: is start_url
+            pass
+        
+        #作为next处理：静态list
         for next_url in next_urls:
             next_url = next_url.group(1)
             if 'javascript:;'==next_url or "javascript"==next_url or next_url.startswith('#'):

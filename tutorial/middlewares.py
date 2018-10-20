@@ -116,12 +116,14 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
+        #cls.crawler = crawler
         #s = cls(timeout=1, service_args=3)
         s = cls()
         return s
     
     #def __init__(self, timeout=None, service_args=[]):
     def __init__(self):
+        self.browser = None
         '''
         #只在需要时初始化
         self.use_selenium = False
@@ -137,6 +139,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             self.browser.close()
         
     def process_request(self, request, spider):
+        #help(self.crawler.engine.downloader)
         ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
         request.headers.setdefault('User-Agent', ua)
 
@@ -152,6 +155,12 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             ua = spider.request_res_route[spider.request_res_route_key]['UA']
 
         request.headers['USER_AGENT']=ua
+
+        # cookie
+        #if spider.request_res_route_key and spider.request_res_route and 'useCookie' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['useCookie']:
+        #    self.crawler.settings.set('COOKIES_ENABLED', True)
+        #else:
+        #    self.crawler.settings.set('COOKIES_ENABLED', False)
 
         # Selenium
         if spider.request_res_route_key and spider.request_res_route and 'UseSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UseSelenium']==True:
