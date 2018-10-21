@@ -55,11 +55,15 @@ class BaiduListNext(object):
             except:
                 response_body = str(response.body, encoding='gb2312')
             pass
-        next_urls = re.finditer(r'<a .*?href="(.*?)"',response_body)
+        # '<a href="abc">aaa</a><a href="efg">bbb</a>' => ['abc', 'efg']
+        #next_urls = re.finditer(r'<a .*?href=["|\'](.*?)["|\']',response_body)
+        # '<a href="abc">aaa</a><a href="efg">bbb</a>' => [('abc', 'aaa'), ('efg', 'bbb')]
+        next_urls = re.finditer(r'<a .*?href="(.*?)".*?>(.*?)</a>', response_body)
         
         #作为next处理：静态list
-        for next_url in next_urls:
-            next_url = next_url.group(1)
+        for url in next_urls:
+            next_url = url.group(1)
+            next_a = url.group(2)
             if 'javascript:;'==next_url or "javascript"==next_url or next_url.startswith('#'):
                 continue
             if next_url.startswith('/'):
@@ -76,10 +80,17 @@ class BaiduListNext(object):
                 #or todo: db
                 #or todo: api
                 pass
-        
-            #这是一个demo，只对当前页面“百度搜索结果”中的link?链接进行深入爬取
+
+            #这是一个demo，进入结果页，只对当前页面“百度搜索结果”中的link?链接进行深入爬取
             if next_url.startswith('http://www.baidu.com/link?url='):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
                 #req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta=response.meta)
                 yield req
+
+            #进入下一页
+            if next_a=='下一页':
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+                yield req
+
+
 
