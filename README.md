@@ -9,7 +9,7 @@
 
 ### 架构
 ```
-                                        -----> (response) -> (item_res_route) -> Item -> 入库
+                                      -----> (response) -> (item_res_route) -> Item -> 入库
            （编排/调度）               |
 (User) => task => start(meta) -> request -> (response) -> (request_res_route) -> Next
             ^       ^              ^                                            | | |
@@ -41,10 +41,10 @@ Item定义保存格式。
 middlewares、Next、Item所需配置统一来自配置中心。
 ```
 
-### DEMO - 从百度结果页到csdn：
+### DEMO - 任务1微博股市话题、任务2csdn开源：
 ```
-#lpush edata:start_urls https://www.baidu.com/s?wd=abc%20site%3Ablog.csdn.net
-lpush edata:start_urls "https://www.baidu.com/s?wd=abc site:blog.csdn.net"
+lpush edata:start_urls "https://www.baidu.com/s?wd=股市 site:weibo.cn"
+lpush edata:start_urls "https://www.baidu.com/s?wd=开源 site:blog.csdn.net"
 ```
 
 

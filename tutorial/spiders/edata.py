@@ -67,14 +67,14 @@ class EdataSpider(RedisSpider):
         self.request_res_route = {'http://localhost:8081/':{'Next':'Local','UA':'','Delay':2,'Frequency':3600,'UseSelenium':True,'cookieLess':True,'hasStart':False},
                          'https://www.baidu.com/':{'Next':'Baidu'},
                          'http://www.sina.com.cn/':{'Next':'Sina'},
-                         re.compile(r'https://www.baidu.com/s\?wd=\w'):{'Next':'BaiduList'},
+                         re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'Next':'BaiduList'},
                          }
         # url => item
         # 1、精确匹配，2、正则匹配
         self.item_res_route = {'http://localhost:8081/':{'Item':'Local'},
                       'https://www.baidu.com/':{'Item':'Baidu'},
                       'http://www.sina.com.cn/':{'Item':'Sina'},
-                      #re.compile(r'https://www.baidu.com/s\?wd=\w'):{'Item':'BaiduList'},
+                      #re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'Item':'BaiduList'},
                       re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):{'Item':'CsdnArticle'},
                       }
         pass
