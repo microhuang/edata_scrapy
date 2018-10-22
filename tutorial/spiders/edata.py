@@ -84,11 +84,16 @@ class EdataSpider(RedisSpider):
 
         #后续改为配置文件
         import mysql.connector
-        #cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='scrapy_db')
-        cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='mysql')
+        cnx = None
+        if __debug__:
+            cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='mysql')
+        else: # -O
+            cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='scrapy_db')
         cur = cnx.cursor()
-        #cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item from conf_item')
-        cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item')
+        if __debug__:
+            cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item')
+        else: # -O
+            cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item from conf_item')
         res = cur.fetchall()
         for i in res:
             self.item_res_route[i[0]] = {'Item':i[1],}
