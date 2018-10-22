@@ -89,16 +89,32 @@ class EdataSpider(RedisSpider):
             cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='mysql')
         else: # -O
             cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='scrapy_db')
-        cur = cnx.cursor()
+        cur = cnx.cursor(dictionary=True,buffered=True)
         if __debug__:
-            cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item')
+            cur.execute('select "https://www.baidu.com/" as route, "match" as type, "Baidu" as item')
         else: # -O
-            cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item from conf_item')
+            cur.execute('select "https://www.baidu.com/" as route, "match" as "type", "Baidu" as item from conf_item')
         res = cur.fetchall()
         for i in res:
-            self.item_res_route[i[0]] = {'Item':i[1],}
+            if i['type']=="match":
+                self.item_res_route[i['route']] = {'Item':i['item'],}
+            else:
+                self.item_res_route[re.compile(i['route'])] = {'Item':i['item'],}
+        #cur.close()
         #print(cur.fetchall())
         #print(self.item_res_route)
+        cur = cnx.cursor(dictionary=True,buffered=True)
+        if __debug__:
+            cur.execute('select "https://www.baidu.com/" as route, "match" as type, "Baidu" as next, 1 as hasstart')
+        else: # -O
+             cur.execute('select "https://www.baidu.com/" as route, "match" as "type", "Baidu" as next, 1 as hasstart from conf_request')
+        res = cur.fetchall()
+        for i in res:
+            if i['type']=="match":
+                self.request_res_route[i['route']] = {'Next':i['next'],}
+            else:
+                self.request_res_route[re.compile(i['route'])] = {'Next':i['next'],}
+        cur.close()
         cnx.close()
         pass
 
