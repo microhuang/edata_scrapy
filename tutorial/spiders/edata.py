@@ -55,9 +55,9 @@ class EdataSpider(RedisSpider):
         #注册空闲时更新配置
         dispatcher.connect(self.setup, signals.spider_idle)
         #
-        #dispatcher.connect(self.spider_idle, signal=signals.item_scraped)
+        dispatcher.connect(self.schedule_next_requests, signal=signals.item_scraped)
         #
-        #dispatcher.connect(self.spider_idle, signal=signals.request_scheduled)
+        #dispatcher.connect(self.schedule_next_requests, signal=signals.request_scheduled)
         pass
 
     def setup(self):
