@@ -29,7 +29,7 @@ item_res_route: response to item 路由
 request_res_route: response to url 路由
 
 Item: 内容提取逻辑
-Next: url头组装逻辑、next request url提取逻辑、next task url提取逻辑
+Next: url头组装逻辑(包括IP/tor代理等策略)、next request url提取逻辑、next task url提取逻辑
 ```
 
 ### python3 -O -m scrapy crawl edata
