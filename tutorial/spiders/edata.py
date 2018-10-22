@@ -68,6 +68,7 @@ class EdataSpider(RedisSpider):
                          'https://www.baidu.com/':{'Next':'Baidu'},
                          'http://www.sina.com.cn/':{'Next':'Sina'},
                          re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'Next':'BaiduList'},
+                         re.compile(r'https://passport.weibo.com/visitor/visitor\?'):{'Next':'WeiboPassport'},#需要处理这个链接才能进入页面
                          }
         # url => item
         # 1、精确匹配，2、正则匹配
@@ -76,6 +77,9 @@ class EdataSpider(RedisSpider):
                       'http://www.sina.com.cn/':{'Item':'Sina'},
                       #re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'Item':'BaiduList'},
                       re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):{'Item':'CsdnArticle'},
+                      re.compile(r'https://media.weibo.cn/article?id=\d+'):{'Item':'WeiboMediaArticleItem'},
+                      re.compile(r'https://media.weibo.cn/article/amp?id=\d+'):{'Item':'WeiboMediaArticleItem'},
+                      re.compile(r'https://weibo.com/u/\d+'):{'Item':'WeiboMediaArticleItem'},
                       }
         pass
 

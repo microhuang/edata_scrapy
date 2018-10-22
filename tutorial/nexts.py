@@ -92,5 +92,8 @@ class BaiduListNext(object):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
                 yield req
 
+class WeiboPassportNext(object):
+    #todo
+    pass
 
 

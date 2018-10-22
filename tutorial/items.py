@@ -60,3 +60,30 @@ class CsdnArticleItem(scrapy.Item):
         item['title'] = response.xpath('//title/text()').extract()
         return item
 
+# https://media.weibo.cn/article/amp?id=2309614279344888477175
+# https://media.weibo.cn/article?id=2309614279344888477175
+class WeiboMediaArticleItem(scrapy.Item):
+    title = scrapy.Field()
+
+    @staticmethod
+    def extract(response):
+        item = WeiboMediaArticleItem()
+        #todo
+        #item['response'] = response
+        item['title'] = response.xpath('//title/text()').extract()
+        return item
+
+# https://weibo.com/u/3659206143
+class WeiboUserItem(scrapy.Item):
+    title = scrapy.Field()
+
+    @staticmethod
+    def extract(response):
+        print("爬取到微博用户主页")
+        item = WeiboUserItem()
+        #todo
+        #item['response'] = response
+        item['title'] = response.xpath('//title/text()').extract()
+        return item
+
+    
