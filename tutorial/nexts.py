@@ -93,7 +93,12 @@ class BaiduListNext(object):
                 yield req
 
 class WeiboPassportNext(object):
-    #todo
-    pass
+    @staticmethod
+    def extract(response,spider):
+        #todo
+        pass
+
+
+
 
 

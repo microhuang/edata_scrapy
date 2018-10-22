@@ -143,8 +143,9 @@ class EdataSpider(RedisSpider):
 
         #提取url
         next_url = self.__extract_url(response)
-        for req in next_url:
-            yield req
+        if next_url:
+            for req in next_url:
+                yield req
         '''
         if 'url' in next_url and next_url['url']:
             if not next_url['dont_filter']:
@@ -161,8 +162,9 @@ class EdataSpider(RedisSpider):
         try:
             #从Middleware定位request资源路由
             url = eval(self.request_res_route[self.request_res_route_key]['Next']+'Next').extract(response,self)
-            for r in url:
-                yield r
+            if url:
+                for r in url:
+                    yield r
             '''
             for k in self.request_res_route:
                 if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
