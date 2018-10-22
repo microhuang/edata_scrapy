@@ -81,6 +81,20 @@ class EdataSpider(RedisSpider):
                       re.compile(r'https://media.weibo.cn/article/amp?id=\d+'):{'Item':'WeiboMediaArticleItem'},
                       re.compile(r'https://weibo.com/u/\d+'):{'Item':'WeiboMediaArticleItem'},
                       }
+
+        #后续改为配置文件
+        import mysql.connector
+        #cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='scrapy_db')
+        cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='mysql')
+        cur = cnx.cursor()
+        #cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item from conf_item')
+        cur.execute('select "https://www.baidu.com/" as route, "Baidu" as item')
+        res = cur.fetchall()
+        for i in res:
+            self.item_res_route[i[0]] = {'Item':i[1],}
+        #print(cur.fetchall())
+        #print(self.item_res_route)
+        cnx.close()
         pass
 
     #假设start队列带有meta数据
