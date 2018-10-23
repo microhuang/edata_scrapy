@@ -163,6 +163,12 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         #else:
         #    self.crawler.settings.set('COOKIES_ENABLED', False)
 
+        # proxy
+        if spider.request_res_route_key and spider.request_res_route and 'proxy' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['proxy']:
+            request.meta['proxy'] = spider.request_res_route[spider.request_res_route_key]['proxy']
+        else:
+            unset(request.meta['proxy'])
+            
         # Selenium
         if spider.request_res_route_key and spider.request_res_route and 'UseSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UseSelenium']==True:
             self.use_selenium = True

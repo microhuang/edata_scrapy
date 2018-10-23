@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-import scrapy
+#import scrapy
 
 from scrapy.http import Request
 
@@ -9,7 +9,7 @@ from scrapy_redis.spiders import RedisSpider
 
 from scrapy_redis.utils import bytes_to_str
 
-from scrapy.utils.misc import load_object
+#from scrapy.utils.misc import load_object
 
 from scrapy import signals
 #from scrapy.xlib.pydispatch import dispatcher
@@ -91,9 +91,9 @@ class EdataSpider(RedisSpider):
             cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='scrapy_db')
         cur = cnx.cursor(dictionary=True,buffered=True)
         if __debug__:
-            cur.execute('select "https://www.baidu.com/" as route, "match" as type, "Baidu" as item')
+            cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as item')
         else: # -O
-            cur.execute('select "https://www.baidu.com/" as route, "match" as "type", "Baidu" as item from conf_item')
+            cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as item from conf_item')
         res = cur.fetchall()
         for i in res:
             if i['type']=="match":
@@ -105,9 +105,9 @@ class EdataSpider(RedisSpider):
         #print(self.item_res_route)
         cur = cnx.cursor(dictionary=True,buffered=True)
         if __debug__:
-            cur.execute('select "https://www.baidu.com/" as route, "match" as type, "Baidu" as next, 1 as hasstart')
+            cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
         else: # -O
-             cur.execute('select "https://www.baidu.com/" as route, "match" as "type", "Baidu" as next, 1 as hasstart from conf_request')
+             cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as next, 1 as hasstart from conf_request')
         res = cur.fetchall()
         for i in res:
             if i['type']=="match":
@@ -182,7 +182,7 @@ class EdataSpider(RedisSpider):
         #except:
             pass
             
-        return url
+        #return url
 
     def __extract_item(self, response):
         #模版资源匹配

@@ -13,7 +13,9 @@ class LocalNext(object):
         #todo
         next_url = "http://localhost:8081/"
         dont_filter = False
-        return {'url':next_url,'dont_filter':dont_filter}
+        req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+        yield req
+        #return {'url':next_url,'dont_filter':dont_filter}
     
 #百度url页面的next提取逻辑
 class BaiduNext(object):
@@ -23,7 +25,9 @@ class BaiduNext(object):
         #todo
         next_url = "https://www.baidu.com/"
         dont_filter = False
-        return {'url':next_url,'dont_filter':dont_filter}
+        req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+        yield req
+        #return {'url':next_url,'dont_filter':dont_filter}
 
 class SinaNext(object):
     #必须由yield Request返回
@@ -32,7 +36,9 @@ class SinaNext(object):
         #todo
         next_url = "http://www.sina.com.cn/"
         dont_filter = False
-        return {'url':next_url,'dont_filter':dont_filter}
+        req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+        yield req
+        #return {'url':next_url,'dont_filter':dont_filter}
 
 # www.baidu.com/s?wd=\w
 class BaiduListNext(object):
