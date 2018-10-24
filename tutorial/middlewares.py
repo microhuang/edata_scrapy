@@ -124,6 +124,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
     #def __init__(self, timeout=None, service_args=[]):
     def __init__(self):
         self.browser = None
+        UserAgentMiddleware.__init__(self)
         '''
         #只在需要时初始化
         self.use_selenium = False
