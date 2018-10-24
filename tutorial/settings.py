@@ -90,8 +90,9 @@ ROBOTSTXT_OBEY = False
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 
+#SCHEDULER = "tutorial.framework.scheduler.Scheduler" #解决一个默认去重的兼容问题
 SCHEDULER = "scrapy_redis.scheduler.Scheduler"
-SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.FifoQueue'
+#SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.FifoQueue'
 #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.LifoQueue'
 DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
 SCHEDULER_PERSIST = True
@@ -107,8 +108,9 @@ DOWNLOADER_MIDDLEWARES = {
     'tutorial.middlewares.EdataDownloaderMiddleware': 543,
 }
 
-#USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
+USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
 
+#HTTPERROR_ALLOWED_CODES = [422]
 
 
 

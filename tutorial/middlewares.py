@@ -7,7 +7,11 @@
 
 from scrapy import signals
 
+from scrapy.http import FormRequest
+
 import re
+
+from tutorial.nexts import *
 
 
 class TutorialSpiderMiddleware(object):
@@ -124,6 +128,9 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
     #def __init__(self, timeout=None, service_args=[]):
     def __init__(self):
         self.browser = None
+        
+        UserAgentMiddleware.__init__(self)
+        
         '''
         #只在需要时初始化
         self.use_selenium = False
@@ -137,25 +144,46 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
     def __del__(self):
         if self.browser:
             self.browser.close()
+            
+    def process_response(self, request, response, spider):
+        # todo:获取登陆账号
+        if spider.request_res_route_key and 'LoginUser' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['LoginUser']:
+            spider.logger.info('edata logining ... %s ' % response.url)
+#            request = FormRequest.from_response(response=response,
+#                                                meta={'cookiejar': response.meta['cookiejar'] if response and hasattr(response, 'meta') and 'cookiejar' in response.meta else None},
+#                                                #headers=self.post_headers,
+#                                                formdata={
+#                                                    #"utf8": utf8,
+#                                                    #"authenticity_token": authenticity_token,
+#                                                    "login": spider.request_res_route[spider.request_res_route_key]['LoginUser'],
+#                                                    "password": spider.request_res_route[spider.request_res_route_key]['LoginPass'] if spider.request_res_route[spider.request_res_route_key]['LoginPass'] else '',
+#                                                    #"commit": commit
+#                                                },
+#                                                callback=request.callback,
+#                                                dont_filter=request.dont_filter)
+            request = eval(spider.request_res_route[spider.request_res_route_key]['Next']+'Next').login(request, response, spider)
+            # 使用后释放标记，防止污染
+            spider.request_res_route_key = None
+            return request
+        return response
         
     def process_request(self, request, spider):
-        #print(request.meta)
         #help(self.crawler.engine.downloader)
-        ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
-        request.headers.setdefault('User-Agent', ua)
+        #ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
+        #request.headers.setdefault('User-Agent', ua)
 
         # request_res_route
-        for k in spider.request_res_route:
-            if k==request.url or isinstance(k, re.Pattern) and re.match(k,request.url):
-                spider.logger.info('request_res_route_key: %s' % k)
-                spider.request_res_route_key = k
-                break
+        if spider.request_res_route:
+            for k in spider.request_res_route:
+                if k==request.url or 'Type' in spider.request_res_route[k] and spider.request_res_route[k]['Type']=='starts' and request.url.startswith(k) or isinstance(k, re.Pattern) and re.match(k,request.url):
+                    spider.logger.info('request_res_route_key: %s' % k)
+                    spider.request_res_route_key = k
+                    break
 
         # UA
         if spider.request_res_route_key and spider.request_res_route and 'UA' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UA']:
             ua = spider.request_res_route[spider.request_res_route_key]['UA']
-
-        request.headers['USER_AGENT']=ua
+            request.headers['USER_AGENT']=ua
 
         # cookie
         #if spider.request_res_route_key and spider.request_res_route and 'useCookie' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['useCookie']:
@@ -163,11 +191,17 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         #else:
         #    self.crawler.settings.set('COOKIES_ENABLED', False)
 
+        # login
+        #if spider.request_res_route_key and spider.request_res_route and 'LoginUser' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['LoginUser']:
+        #    request = FormRequest(request.url, callback=request.callback, dont_filter=request.dont_filter, method = 'POST', formdata={'login':spider.request_res_route[spider.request_res_route_key]['LoginUser'],'password':spider.request_res_route[spider.request_res_route_key]['LoginPass']})
+        #elif 'LoginUser' in request.meta:
+        #    del request.meta['LoginUser']
+        
         # proxy
         if spider.request_res_route_key and spider.request_res_route and 'proxy' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['proxy']:
             request.meta['proxy'] = spider.request_res_route[spider.request_res_route_key]['proxy']
-        else:
-            unset(request.meta['proxy'])
+        elif 'proxy' in request.meta:
+            del request.meta['proxy']
             
         # Selenium
         if spider.request_res_route_key and spider.request_res_route and 'UseSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UseSelenium']==True:

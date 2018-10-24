@@ -86,4 +86,15 @@ class WeiboUserItem(scrapy.Item):
         item['title'] = response.xpath('//title/text()').extract()
         return item
 
-    
+# https://github.com/settings/profile
+class GithubProfileItem(scrapy.Item): 
+    title = scrapy.Field()
+
+    @staticmethod
+    def extract(response):
+        print("Githubv用户主页")
+        item = GithubProfileItem()
+        #todo
+        #item['response'] = response
+        item['title'] = response.xpath('//title/text()').extract()
+        return item

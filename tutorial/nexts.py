@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from scrapy.http import Request
+from scrapy.http import Request,FormRequest
 
 import re, time
 
@@ -104,7 +104,26 @@ class WeiboPassportNext(object):
         #todo
         pass
 
-
+class GithubLoginNext(object):
+    @staticmethod
+    def extract(response,spider):
+        pass
+    
+    @staticmethod
+    def login(request, response, spider):
+        request = FormRequest.from_response(response=response,
+                                            meta={'cookiejar': response.meta['cookiejar'] if response and hasattr(response, 'meta') and 'cookiejar' in response.meta else None},
+                                            #headers=self.post_headers,
+                                            formdata={
+                                                #"utf8": utf8,
+                                                #"authenticity_token": authenticity_token,
+                                                "login": spider.request_res_route[spider.request_res_route_key]['LoginUser'],
+                                                "password": spider.request_res_route[spider.request_res_route_key]['LoginPass'] if spider.request_res_route[spider.request_res_route_key]['LoginPass'] else '',
+                                                #"commit": commit
+                                            },
+                                            callback=request.callback,
+                                            dont_filter=request.dont_filter)
+        return request
 
 
 

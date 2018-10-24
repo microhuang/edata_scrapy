@@ -38,6 +38,7 @@ class EdataSpider(RedisSpider):
                          'https://www.baidu.com/':'Baidu',
                          'http://www.sina.com.cn/':'Sina',
                          re.compile(r'https://www.baidu.com/s\?wd=\w'):'BaiduList',
+                         re.compile(r'https://github.com/login?return_to='):'GithubLogin',
                          }
     # url => item
     # 1、全匹配，2、正则匹配
@@ -63,15 +64,16 @@ class EdataSpider(RedisSpider):
     def setup(self):
         #从配置库获取这些数据，配置过多时可以排序优化资源路由算法
         # url => next_url: Next、UserAgent、下一个延迟时间、下一次间隔时间/去重时间、使用模拟浏览器
-        # 1、精确匹配，2、正则匹配
-        self.request_res_route = {'http://localhost:8081/':{'Next':'Local','UA':'','Delay':2,'Frequency':3600,'UseSelenium':True,'cookieLess':True,'hasStart':False,'Proxy':'http://127.0.0.1:8123'},
+        # 1、精确匹配match，2、正则匹配search，3、前缀匹配starts
+        self.request_res_route = {'http://localhost:8081/':{'Type':'match','Next':'Local','UA':'','Delay':2,'Frequency':3600,'UseSelenium':True,'cookieLess':True,'hasStart':False,'Proxy':'http://127.0.0.1:8123'},
                          'https://www.baidu.com/':{'Next':'Baidu'},
                          'http://www.sina.com.cn/':{'Next':'Sina'},
                          re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'Next':'BaiduList'},
                          re.compile(r'https://passport.weibo.com/visitor/visitor\?'):{'Next':'WeiboPassport'},#需要处理这个链接才能进入页面
+                         'https://github.com/login?return_to=':{'Type':'starts','Next':'GithubLogin','LoginUser':'yyyyyy','LoginPass':'xxxxxx'},
                          }
         # url => item
-        # 1、精确匹配，2、正则匹配
+        # 1、精确匹配，2、正则匹配，3、前缀匹配
         self.item_res_route = {'http://localhost:8081/':{'Item':'Local'},
                       'https://www.baidu.com/':{'Item':'Baidu'},
                       'http://www.sina.com.cn/':{'Item':'Sina'},
@@ -80,6 +82,7 @@ class EdataSpider(RedisSpider):
                       re.compile(r'https://media.weibo.cn/article?id=\d+'):{'Item':'WeiboMediaArticleItem'},
                       re.compile(r'https://media.weibo.cn/article/amp?id=\d+'):{'Item':'WeiboMediaArticleItem'},
                       re.compile(r'https://weibo.com/u/\d+'):{'Item':'WeiboMediaArticleItem'},
+                      'https://github.com/settings/profile':{'Item':'GithubProfile'},
                       }
 
         #后续改为配置文件
@@ -133,7 +136,7 @@ class EdataSpider(RedisSpider):
             pass
         
         return Request(url, dont_filter=True, meta=meta)
-                           
+    
     def parse(self, response):
         #提取内容
         item = self.__extract_item(response)
@@ -291,7 +294,4 @@ class SinaItem(scrapy.Item):
         item['title'] = 'sina'
         return item
 '''
-
-
-
 
