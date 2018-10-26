@@ -86,39 +86,37 @@ class EdataSpider(RedisSpider):
                       }
 
         #后续改为配置文件
-        import mysql.connector
-        cnx = None
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+        from collections import namedtuple
+        
+        engine = create_engine("mysql+mysqlconnector://root:12345678@localhost/scrapy_db")
+        session = sessionmaker(bind=engine)()
+        
+        result = None
         if __debug__:
-            cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='mysql')
+            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as item')
         else: # -O
-            cnx = mysql.connector.connect(user='root',password='12345678',host='localhost',database='scrapy_db')
-        cur = cnx.cursor(dictionary=True,buffered=True)
-        if __debug__:
-            cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as item')
-        else: # -O
-            cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as item from conf_item')
-        res = cur.fetchall()
+            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as item from conf_item')
+        res = result.fetchall()
         for i in res:
             if i['type']=="match":
                 self.item_res_route[i['route']] = {'Item':i['item'],}
             else:
                 self.item_res_route[re.compile(i['route'])] = {'Item':i['item'],}
-        #cur.close()
-        #print(cur.fetchall())
-        #print(self.item_res_route)
-        cur = cnx.cursor(dictionary=True,buffered=True)
+                
         if __debug__:
-            cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
+            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
         else: # -O
-             cur.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as next, 1 as hasstart from conf_request')
-        res = cur.fetchall()
+            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as next, 1 as hasstart from conf_request')
+        res = result.fetchall()
         for i in res:
             if i['type']=="match":
                 self.request_res_route[i['route']] = {'Next':i['next'],}
             else:
                 self.request_res_route[re.compile(i['route'])] = {'Next':i['next'],}
-        cur.close()
-        cnx.close()
+                
+        session.close()
         pass
 
     #假设start队列带有meta数据

@@ -1,4 +1,4 @@
-# 通用爬虫框架
+# 分布式通用爬虫框架
 
 ### 特点
 ```
@@ -32,7 +32,7 @@ Item: 内容提取逻辑
 Next: url头组装逻辑(包括IP/tor代理等策略)、next request url提取逻辑、next task url提取逻辑
 ```
 
-### python3 -O -m scrapy crawl edata
+### python37 -O -m scrapy crawl edata
 
 ```
 middlewares控制请求头：ua、login、ip/tor/proxy、rate在此。
