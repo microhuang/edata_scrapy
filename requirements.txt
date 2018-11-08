@@ -3,5 +3,6 @@ scrapy-redis
 
 mysql-connector
 SQLAlchemy
+redis
 
 APScheduler
