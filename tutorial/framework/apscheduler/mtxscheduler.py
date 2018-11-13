@@ -14,8 +14,8 @@ from uuid import uuid4
             
 
 #import pickle
-import cloudpickle as pickle
-#import dill as pickle  #不能处理six.with_metaclass(ABCMeta)继承的子类
+#import cloudpickle as pickle #不能处理_thread.lock
+import dill as pickle  #不能处理six.with_metaclass(ABCMeta)继承的子类,从dispatch_table确认，dill处理的类型更多
 #pickle.settings['recurse'] = True
 #import copy_reg#python2
 import copyreg
@@ -126,11 +126,11 @@ class MutexScheduler(Scheduler):
 
     def mutex(self, lock=None, heartbeat=None, lock_else=None, 
               unactive_interval=datetime.timedelta(seconds=30), opener=None):
-		
-        def mutex_func_gen(func, job_id):
+	
+        def mutex_func_gen(func, job_id, ip):
             #重要：不要引入外部thread\queue\等数据，降导致序列化错误
+#            opener=None #todo:序列化时，需要确保这里指向空（不引入线程锁）、反序列化时时恢复环境，以便代码执行
             def mtx_func(** options):
-                opener=None #todo:xxx
 #                print(options)
                 if lock:#有锁？
                     lock_rec = lock(opener, job_id)
@@ -139,7 +139,7 @@ class MutexScheduler(Scheduler):
 #                    print(('update_time' in lock_rec and lock_rec['update_time'] and now - lock_rec['update_time'] >= unactive_interval))
 
                     # execute mutex job when the server is active, or the other server is timeout.
-                    if not lock_rec or ('active_ip' in lock_rec and lock_rec['active_ip'] == "self.ip") or ('update_time' in lock_rec and lock_rec['update_time'] and now - lock_rec['update_time'] >= unactive_interval):  
+                    if not lock_rec or ('active_ip' in lock_rec and lock_rec['active_ip'] == ip) or ('update_time' in lock_rec and lock_rec['update_time'] and now - lock_rec['update_time'] >= unactive_interval):  
 #                        print(3333)
                         if lock_rec:
                             del lock_rec['active_ip']
@@ -156,7 +156,7 @@ class MutexScheduler(Scheduler):
 
                         # send heart beat
                         #print(344444)
-                        heartbeat("self.ip", now, opener, job_id, ** lock_attrs)#todo:返回值写入lock？
+                        heartbeat(ip, now, opener, job_id, ** lock_attrs)#todo:返回值写入lock？
                         return lock_attrs
                     else: 
 #                        print(4444)
@@ -165,6 +165,21 @@ class MutexScheduler(Scheduler):
                     #print(1111)
                     lock_attrs = func(** options)#todo:执行job？
                     return lock_attrs
+        
+#            def _pickle_method(obj):
+##                print(3233)
+##                print(33333,obj)
+##                exit()
+##                pass
+#                return _thread.LockType, ()
+#            def _unpickle_method(func_name, obj, cls):
+#                print(777777777)
+#                return object
+#                
+##            print(55555)
+#            import _thread
+#            copyreg.pickle(_thread.LockType, _pickle_method, constructor_ob=_unpickle_method)#constructor_ob注册无效？
+#            copyreg.constructor(_unpickle_method)#constructor注册无效？
 
             return mtx_func
 
@@ -176,11 +191,6 @@ class MutexScheduler(Scheduler):
             return func
 
         return inner
-
-    def _pickle_method(m):
-        print(111111)
-        pass
-    copyreg.pickle(types.FunctionType, _pickle_method)
     
     #job.id
 #    @override
@@ -193,17 +203,21 @@ class MutexScheduler(Scheduler):
 #            print(job_id)
             if hasattr(self, 'mtx_func_gen'):
 #                print(111)
-                func = self.mtx_func_gen(func, job_id)
+                func = self.mtx_func_gen(func, job_id, self.ip)
 
 #            print(func)
 #            import pickle
 #            import cloudpickle as pickle
 #            print(func)
+#            print(type(func))
+#            print(func is types.BuiltinMethodType)
 ##            def _pickle_method(m):
 ##                print(1111111)
 ##                return m, ()
-##            copyreg.pickle(func, _pickle_method)
-#            print(pickle.dumps(func))
+##            copyreg.pickle(types.MethodType, _pickle_method)
+#            print(66666)
+#            sss=pickle.dumps(func)
+#            print(77777,pickle.loads(sss))
 #            exit()
             func.job = self.add_job(func, id=job_id, ** options)
 #            print(func)
@@ -240,7 +254,7 @@ if __name__=='__main__':
     i = 0
 
 #    @sched.cron_schedule(trigger='cron', second = '*')
-    @sched.scheduled_job(trigger='cron', kwargs={"aa":'aa111',"bb":'bb'}, second = '*/1', jobstore='mysql')
+#    @sched.scheduled_job(trigger='cron', kwargs={"aa":'aa111',"bb":'bb'}, second = '*/1', jobstore='mysql')
     @sched.mutex(lock = lock, heartbeat = hb, lock_else = le, opener=lock_store)
     # 由job向业务传递分片信息
     def job(aa="",bb=""):

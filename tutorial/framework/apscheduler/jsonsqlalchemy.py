@@ -15,7 +15,8 @@ except ImportError:  # pragma: nocover
 #    import pickle
     from pickle import HIGHEST_PROTOCOL
     
-import cloudpickle as pickle
+#import cloudpickle as pickle
+import dill as pickle
     
 import json
 
