@@ -177,6 +177,11 @@ class MutexScheduler(Scheduler):
 
         return inner
 
+    def _pickle_method(m):
+        print(111111)
+        pass
+    copyreg.pickle(types.FunctionType, _pickle_method)
+    
     #job.id
 #    @override
     def scheduled_job(self, ** options):
