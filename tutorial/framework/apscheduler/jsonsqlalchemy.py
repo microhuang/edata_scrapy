@@ -15,8 +15,9 @@ except ImportError:  # pragma: nocover
 #    import pickle
     from pickle import HIGHEST_PROTOCOL
     
-#import cloudpickle as pickle
-import dill as pickle
+#同时加载dill\cloudpickle，dispatch_table将合并，获得双方的综合能力
+import dill as pickle #不能处理虚类
+import cloudpickle as pickle #不能处理_thread.lock
     
 import json
 
