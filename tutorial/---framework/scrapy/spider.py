@@ -18,15 +18,10 @@ from pydispatch import dispatcher
 from tutorial.items import *
 from tutorial.nexts import *
 
-from framework.scrapy.spider import EdataSpider
-
 import re
 
 
-class EdataSpider(EdataSpider):
-    pass
-    
-class ___EdataSpider(RedisSpider):
+class EdataSpider(RedisSpider):
     name = 'edata'
     redis_key = 'edata:start_urls'
 

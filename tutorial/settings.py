@@ -90,7 +90,7 @@ ROBOTSTXT_OBEY = False
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 
-#SCHEDULER = "tutorial.framework.scrapy.scheduler.Scheduler" #解决一个默认去重的兼容问题
+#SCHEDULER = "framework.scrapy.scheduler.Scheduler" #解决一个默认去重的兼容问题
 SCHEDULER = "scrapy_redis.scheduler.Scheduler"
 #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.FifoQueue'
 #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.LifoQueue'
