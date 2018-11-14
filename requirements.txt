@@ -1,8 +1,9 @@
 scrapy
 scrapy-redis
 
-mysql-connector
-SQLAlchemy
+#mysql-connector
+mysql-connector-python==8.0.11+
+SQLAlchemy==1.1.18+
 redis
 
-APScheduler
+APScheduler==3.5+
