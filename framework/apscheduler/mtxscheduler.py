@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
+#from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
 #from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
 
 import apscheduler.events
@@ -132,160 +132,166 @@ def rhb(ip, now, opener, job_id=None, **attrs):
 #    return result
 
          
-#todo: 当前的序列化方案，将code序列化，包括：self.role等数据，导致不恰当的行为？
-class MutexScheduler(Scheduler):
-    def __init__(self, role, gconfig={}, ** options):
-        assert role in ("work","standby"), "MutexScheduler.__init__参数值错误，role有效值：work、standby！"
-        logging.getLogger().setLevel(logging.NOTSET) #todo: xxxx
-        logging.info("") #todo: xxxx
-        Scheduler.__init__(self, gconfig, ** options)
-        self.uuid = uuid4().hex
-        self.role = role #work:自己没有持有锁就可以获得锁、standby：任何人没有持有锁才可以获得锁
-#        self.ip = get_ip('eth0')
-        self._logger.info("Scheduler: %s, Role: %s", self.uuid,self.role)
-        
-#    def __getstate__(self):
-#         return self.__dict__
-        
-#    #添加telnet协议方便查看运行状态
-#    #@override
-#    def start(self):
-#        super(MutexScheduler, self).start()
-#        #todo:telnet
-##        from twisted.internet import protocol
-##        from scrapy.utils.reactor import listen_tcp
-##        listen_tcp(123456, "localhost", self)
+def MutexSchedulerProxy(Scheduler):
 
-    def mutex(self, lock=None, heartbeat=None, lock_else=None, 
-              unactive_interval=datetime.timedelta(seconds=30), opener=None):
-	
-        def mutex_func_gen(func, job_id, uuid, role):
-            #重要：不要引入外部thread\queue\等数据，降导致序列化错误
-#            opener=None #todo:序列化时，需要确保这里指向空（不引入线程锁）、反序列化时时恢复环境，以便代码执行
-            def mtx_func(** options):
-                if lock:#装配
-                    if lock(opener, job_id, uuid, role, unactive_interval): #加锁
-                        result = func( ** options )#干活
-                        lock_else(opener, job_id, uuid, role) #释放
+    #todo: 当前的序列化方案，将code序列化，包括：self.role等数据，导致不恰当的行为？
+    class MutexScheduler(Scheduler):
+        def __init__(self, role, gconfig={}, ** options):
+            assert role in ("work","standby"), "MutexScheduler.__init__参数值错误，role有效值：work、standby！"
+            logging.getLogger().setLevel(logging.NOTSET) #todo: xxxx
+            logging.info("") #todo: xxxx
+            Scheduler.__init__(self, gconfig, ** options)
+            self.uuid = uuid4().hex
+            self.role = role #work:自己没有持有锁就可以获得锁、standby：任何人没有持有锁才可以获得锁
+    #        self.ip = get_ip('eth0')
+            self._logger.info("Scheduler: %s, Role: %s", self.uuid,self.role)
+
+    #    def __getstate__(self):
+    #         return self.__dict__
+
+    #    #添加telnet协议方便查看运行状态
+    #    #@override
+    #    def start(self):
+    #        super(MutexScheduler, self).start()
+    #        #todo:telnet
+    ##        from twisted.internet import protocol
+    ##        from scrapy.utils.reactor import listen_tcp
+    ##        listen_tcp(123456, "localhost", self)
+
+        def mutex(self, lock=None, heartbeat=None, lock_else=None,
+                  unactive_interval=datetime.timedelta(seconds=30), opener=None):
+
+            def mutex_func_gen(func, job_id, uuid, role):
+                #重要：不要引入外部thread\queue\等数据，降导致序列化错误
+    #            opener=None #todo:序列化时，需要确保这里指向空（不引入线程锁）、反序列化时时恢复环境，以便代码执行
+                def mtx_func(** options):
+                    if lock:#装配
+                        if lock(opener, job_id, uuid, role, unactive_interval): #加锁
+                            result = func( ** options )#干活
+                            lock_else(opener, job_id, uuid, role) #释放
+                            return result
+                    else:#不装配
+                        result = func(** options)#todo:执行job？
                         return result
-                else:#不装配
-                    result = func(** options)#todo:执行job？
-                    return result
-            
-            def ___mtx_func(** options):
-#                print(options)
-                if lock:#装配
-                    #加锁 todo:以下操作需要原子化
-                    lock_rec = lock(opener, job_id)
-                    if 'schedulers' not in lock_rec or not lock_rec['schedulers']:
-                        lock_rec['schedulers'] = set()
-                    now = datetime.datetime.now()
-#                    print(lock_rec)
-#                    print(('update_time' in lock_rec and lock_rec['update_time'] and now - lock_rec['update_time'] >= unactive_interval))
 
-                    # execute mutex job when the server is active, or the other server is timeout.
-                    #role=='work' or 'standby'?
-                    #验锁
-                    if not lock_rec or (self.role=='work' and self.uuid not in lock_rec['schedulers']) or ('active_ip' in lock_rec and lock_rec['active_ip'] == ip) or ('update_time' in lock_rec and lock_rec['update_time'] and now - lock_rec['update_time'] >= unactive_interval):  
-                        #通过
-#                        print(3333)
-                        if lock_rec:
-                            del lock_rec['active_ip']
-                            del lock_rec['update_time']
+                def ___mtx_func(** options):
+    #                print(options)
+                    if lock:#装配
+                        #加锁 todo:以下操作需要原子化
+                        lock_rec = lock(opener, job_id)
+                        if 'schedulers' not in lock_rec or not lock_rec['schedulers']:
+                            lock_rec['schedulers'] = set()
+                        now = datetime.datetime.now()
+    #                    print(lock_rec)
+    #                    print(('update_time' in lock_rec and lock_rec['update_time'] and now - lock_rec['update_time'] >= unactive_interval))
 
-                        if not lock_rec:
-                            lock_rec = {}
+                        # execute mutex job when the server is active, or the other server is timeout.
+                        #role=='work' or 'standby'?
+                        #验锁
+                        if not lock_rec or (self.role=='work' and self.uuid not in lock_rec['schedulers']) or ('active_ip' in lock_rec and lock_rec['active_ip'] == ip) or ('update_time' in lock_rec and lock_rec['update_time'] and now - lock_rec['update_time'] >= unactive_interval):  
+                            #通过
+    #                        print(3333)
+                            if lock_rec:
+                                del lock_rec['active_ip']
+                                del lock_rec['update_time']
 
-#                        print(func)
-                        lock_attrs = func( ** options )#todo:执行job？
-#                        print(lock_attrs)
-                        if not lock_attrs:
-                            lock_attrs = {}
+                            if not lock_rec:
+                                lock_rec = {}
 
-                        # send heart beat
-                        #print(344444)
-                        if 'schedulers' not in lock_attrs or not lock_attrs['schedulers']:
-                            lock_attrs['schedulers'] = set()
-                        lock_attrs['schedulers'].add(self.uuid) #持锁人
-                        #更新
-                        heartbeat(ip, now, opener, job_id, ** lock_attrs)#todo:返回值写入lock？
+    #                        print(func)
+                            lock_attrs = func( ** options )#todo:执行job？
+    #                        print(lock_attrs)
+                            if not lock_attrs:
+                                lock_attrs = {}
+
+                            # send heart beat
+                            #print(344444)
+                            if 'schedulers' not in lock_attrs or not lock_attrs['schedulers']:
+                                lock_attrs['schedulers'] = set()
+                            lock_attrs['schedulers'].add(self.uuid) #持锁人
+                            #更新
+                            heartbeat(ip, now, opener, job_id, ** lock_attrs)#todo:返回值写入lock？
+                            return lock_attrs
+                        else: 
+                            #未通过
+                            #释放 todo：存在释放他人所拥有锁的风险
+    #                        print(4444)
+                            lock_else(lock_rec, job_id)
+                    else:#不装配
+                        #print(1111)
+                        lock_attrs = func(** options)#todo:执行job？
                         return lock_attrs
-                    else: 
-                        #未通过
-                        #释放 todo：存在释放他人所拥有锁的风险
-#                        print(4444)
-                        lock_else(lock_rec, job_id)
-                else:#不装配
-                    #print(1111)
-                    lock_attrs = func(** options)#todo:执行job？
-                    return lock_attrs
+
+    #            def _pickle_method(obj):
+    ##                print(3233)
+    ##                print(33333,obj)
+    ##                exit()
+    ##                pass
+    #                return _thread.LockType, ()
+    #            def _unpickle_method(func_name, obj, cls):
+    #                print(777777777)
+    #                return object
+    #                
+    ##            print(55555)
+    #            import _thread
+    #            copyreg.pickle(_thread.LockType, _pickle_method, constructor_ob=_unpickle_method)#constructor_ob注册无效？
+    #            copyreg.constructor(_unpickle_method)#constructor注册无效？
+
+                return mtx_func
+
+            self.mtx_func_gen = mutex_func_gen
+
+            def inner(func):
+    #            self.mtx_func_gen = mutex_func_gen
+    #            pass
+                return func
+
+            return inner
+
+        #job.id
+    #    @override
+        def scheduled_job(self, ** options):
+    #    def cron_schedule(self, ** options):
+            def inner(func):
+                if "id" not in options:
+        #            traceback.print_stack()
+                    job_id = uuid4().hex #todo:提前生成ID，便于JOB加锁
+                    options['id'] = job_id
+        #            options.setdefault("id", "{}.{}".format(func.__module__, func.__name__))
+                else:
+                    job_id = options['id']
+
+                if hasattr(self, 'mtx_func_gen'):
+                    func = self.mtx_func_gen(func, job_id, self.uuid, self.role)
+
+    #            print(func)
+    #            import pickle
+    #            import cloudpickle as pickle
+    #            print(func)
+    #            print(type(func))
+    #            print(func is types.BuiltinMethodType)
+    ##            def _pickle_method(m):
+    ##                print(1111111)
+    ##                return m, ()
+    ##            copyreg.pickle(types.MethodType, _pickle_method)
+    #            print(66666)
+    #            sss=pickle.dumps(func)
+    #            print(77777,pickle.loads(sss))
+    #            exit()
+    #            print(888888,job_id)
+                func.job = self.add_job(func, ** options)
+    #            print(func)
+    #            print(func.job.id)
+                return func
+            return inner
         
-#            def _pickle_method(obj):
-##                print(3233)
-##                print(33333,obj)
-##                exit()
-##                pass
-#                return _thread.LockType, ()
-#            def _unpickle_method(func_name, obj, cls):
-#                print(777777777)
-#                return object
-#                
-##            print(55555)
-#            import _thread
-#            copyreg.pickle(_thread.LockType, _pickle_method, constructor_ob=_unpickle_method)#constructor_ob注册无效？
-#            copyreg.constructor(_unpickle_method)#constructor注册无效？
-
-            return mtx_func
-
-        self.mtx_func_gen = mutex_func_gen
-
-        def inner(func):
-#            self.mtx_func_gen = mutex_func_gen
-#            pass
-            return func
-
-        return inner
-    
-    #job.id
-#    @override
-    def scheduled_job(self, ** options):
-#    def cron_schedule(self, ** options):
-        def inner(func):
-            if "id" not in options:
-    #            traceback.print_stack()
-                job_id = uuid4().hex #todo:提前生成ID，便于JOB加锁
-                options['id'] = job_id
-    #            options.setdefault("id", "{}.{}".format(func.__module__, func.__name__))
-            else:
-                job_id = options['id']
-                
-            if hasattr(self, 'mtx_func_gen'):
-                func = self.mtx_func_gen(func, job_id, self.uuid, self.role)
-
-#            print(func)
-#            import pickle
-#            import cloudpickle as pickle
-#            print(func)
-#            print(type(func))
-#            print(func is types.BuiltinMethodType)
-##            def _pickle_method(m):
-##                print(1111111)
-##                return m, ()
-##            copyreg.pickle(types.MethodType, _pickle_method)
-#            print(66666)
-#            sss=pickle.dumps(func)
-#            print(77777,pickle.loads(sss))
-#            exit()
-#            print(888888,job_id)
-            func.job = self.add_job(func, ** options)
-#            print(func)
-#            print(func.job.id)
-            return func
-        return inner
+    return MutexScheduler
     
        
 # test
 if __name__=='__main__':
+    from apscheduler.schedulers.blocking import BlockingScheduler
+    from apscheduler.schedulers.background import BackgroundScheduler
     import logging
     from framework.apscheduler.jsonsqlalchemy import JsonSQLAlchemyJobStore
     from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
@@ -296,15 +302,15 @@ if __name__=='__main__':
     'processpool': ProcessPoolExecutor(1)
     }
     jobstores = {
-    'default': MemoryJobStore(),
+#    'default': MemoryJobStore(),
 ##    'mongo': MongoDBJobStore(),
 #    #'default': SQLAlchemyJobStore(url='sqlite:///jobs.sqlite'),
 #    'mysql': SQLAlchemyJobStore(url='mysql+mysqlconnector://root:12345678@localhost/scrapy_db',tablename='apscheduler_jobs')
 #    'default': JsonSQLAlchemyJobStore(url='mysql+mysqlconnector://root:12345678@localhost/scrapy_db',tablename='apscheduler_jobs'),
-#    'mysql': JsonSQLAlchemyJobStore(url='mysql+mysqlconnector://root:12345678@localhost/scrapy_db',tablename='apscheduler_jobs')
+    'mysql': JsonSQLAlchemyJobStore(url='mysql+mysqlconnector://root:12345678@localhost/scrapy_db',tablename='apscheduler_jobs')
     }
 
-    sched = MutexScheduler("standby",jobstores=jobstores,executors=executors)
+    sched = MutexSchedulerProxy(BlockingScheduler)("standby",jobstores=jobstores,executors=executors)
     
     #import pymongo
     #mongo = pymongo.Connection(host = '127.0.0.1', port = 27017)
@@ -318,7 +324,7 @@ if __name__=='__main__':
     i = 0
 
 #    @sched.cron_schedule(trigger='cron', second = '*')
-    @sched.scheduled_job(trigger='cron', id="job1111", kwargs={"aa":'lkjadslfkjsaldfkj',"bb":'bb'}, second = '*/1', jobstore='default')
+    @sched.scheduled_job(trigger='cron', id="job11111111", kwargs={"aa":'lkjadslfkjsaldfkj',"bb":'bb'}, second = '*/1', jobstore='mysql')
 #    @sched.mutex(lock = lock, heartbeat = hb, lock_else = le, opener=lock_store)
     @sched.mutex(lock = rlo, heartbeat = rhb, lock_else = rle, opener=lock_store, unactive_interval=30)
     # 由job向业务传递分片信息
