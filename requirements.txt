@@ -7,3 +7,5 @@ SQLAlchemy==1.1.18+
 redis
 
 APScheduler==3.5+
+
+redlock-py

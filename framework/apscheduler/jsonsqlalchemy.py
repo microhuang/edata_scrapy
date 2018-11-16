@@ -64,6 +64,7 @@ class JsonSQLAlchemyJobStore(SQLAlchemyJobStore):
 #        self.jobs_t.create(self.engine, True)
     
     def add_job(self, job):
+#        print(pickle.dumps(job.__getstate__(), self.pickle_protocol))
 #        import cloudpickle as pickle
 #        print(job)
 #        print(pickle.dumps(job))
