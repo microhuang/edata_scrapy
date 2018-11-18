@@ -60,11 +60,17 @@ class ___EdataSpider(RedisSpider):
         self.setup()
         #注册空闲时更新配置
         dispatcher.connect(self.setup, signals.spider_idle)
-        #
+        #从start_urls拿数据
         dispatcher.connect(self.schedule_next_requests, signal=signals.item_scraped)
         #
         #dispatcher.connect(self.schedule_next_requests, signal=signals.request_scheduled)
+        #从job拿数据？
+#        dispatcher.connect(self.job_next_requests, signals.spider_idle)
         pass
+    
+    #job?
+#    def job_next_requests(self):
+#        pass
 
     def setup(self):
         #从配置库获取这些数据，配置过多时可以排序优化资源路由算法

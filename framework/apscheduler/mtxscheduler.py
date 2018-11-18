@@ -7,8 +7,10 @@
 import apscheduler.events
 import logging
 import datetime
+import time
 import sys
 from uuid import uuid4
+import random
 
 import socket
 import fcntl
@@ -28,28 +30,32 @@ def err_listener(ev):
     if ev.exception:
         print(sys.exc_info())
         
+#关于锁
+#https://www.cnblogs.com/ironPhoenix/p/6048467.html
+#https://redis.io/topics/distlock/
+        
 # 1 加锁成功、 0 失败
 # expire 锁超时时间，建议为分布节点时间同步误差略大
-def rlo(opener, job_id=None, scheduler_id=None, role=None, expire=3):
+def rlo(opener, key=None, owner=None, role=None, expire=3):
     assert role in ("work","standby"), "MutexScheduler.lock参数值错误，role有效值：work、standby！"
     script = "if KEYS[3]=='work' and redis.call('sismember', KEYS[1], KEYS[2])==1 or KEYS[3]=='standby' and redis.call('exists', KEYS[1])==1 then return 0 else redis.call('sadd', KEYS[1], KEYS[2]); redis.call('expire', KEYS[1], ARGV[1]); return 1 end"
     #eval <script> 3 job_id1 scheduler_id standby 300
 #    print(99999, job_id, scheduler_id, role)
-    result = opener.register_script(script)(keys=[job_id, scheduler_id, role], args=[expire])
+    result = opener.register_script(script)(keys=[key, owner, role], args=[expire])
 #    print(111111111,result,type(result))
     logging.info("role: %s", role)
     return result
 
 # 1 释放成功 0 失败
-def rle(opener, job_id=None, scheduler_id=None, role=None):
+def rle(opener, key=None, owner=None, role=None):
     assert role in ("work","standby"), "MutexScheduler.le参数值错误，role有效值：work、standby！"
     script = "return redis.call('srem', KEYS[1], KEYS[2])"
-    result = opener.register_script(script)(keys=[job_id, scheduler_id], args=[])
+    result = opener.register_script(script)(keys=[key, owner], args=[])
     #eval <script> 2 job_id1 scheduler_id standby
 #    print(333333333,result)
     return result
 
-def rhb(ip, now, opener, job_id=None, **attrs):
+def rhb(opener, ip, now, key=None, **attrs):
     pass
     
 #def lock(opener, job_id=None, scheduler_id=None, role=None):
@@ -158,16 +164,96 @@ def MutexSchedulerProxy(Scheduler):
     ##        from scrapy.utils.reactor import listen_tcp
     ##        listen_tcp(123456, "localhost", self)
 
-        def mutex(self, lock=None, heartbeat=None, lock_else=None,
+        #todo:执行锁
+        #shards人工分片（数据分布不均匀时），否则，size自动分片（数据分布均匀时）
+        def mutex_run(self, lock=None, lock_else=None, heartbeat=None,
+                  unactive_interval=datetime.timedelta(seconds=30), opener=None, size=100, _shards=((1, 10),(11, 20))):
+            def mutex_run_gen(func, job_id):
+                def mtx_func(** options):
+                    #待处理分片，从1开始
+                    shard_id=1
+                    shards=set((1,))
+                    #记录分片扫描次数
+                    shard_inc=1
+                    uuid=uuid4().hex
+                    while True:
+                        #分片已经处理完
+                        if not shards:
+                            return 0
+                        #锁分片：有待处理数据从头抢分片，没有待处理数据任务完成
+                        while True:
+                            try:
+                                if shard_inc>10:
+#                                    self._logger.warn("分片循环扫描过多！")
+                                    pass
+                                #人工分片
+                                if _shards and len(shard_id)<=shard_id:
+                                    shard_id=1
+                                    shard_inc=shard_inc+1
+                                #自动分片
+                                elif 99999999<shard_id:
+#                                    self._logger.warn("自动分片数过多！")
+                                    pass
+                                if lock(opener, job_id+shard_id+"_run", uuid, "standby", 0):
+                                    shards.remove(shard_id)#移除处理的分片
+                                    shard_id=shard_id+1#准备下一分片
+                                    break
+                                else:
+                                    shards.add(shard_id)#记录未处理的分片
+                                    shard_id=shard_id+1
+                            except:
+                                #上报错误
+#                                self._logger.info("锁异常，未能加锁，请处理： %s", job_id+shard_id+"_run")
+                                pass
+                            #抢锁过程慢一点，随机暂停减少死锁
+                            time.sleep(random.randint(1,100)/1000)
+                        #处理人工分片参数
+                        if _shards:
+                            options.setdefault("shard", _shards[shard_id-1])
+                        #处理自动分片参数
+                        else:
+                            options.setdefault("shard", (shard_id, shard_id*size))
+                        #处理分片，干活
+                        #必须：1、接收分片参数，2、返回是否有待处理记录数
+                        cnt = func(**options) #返回是否有待处理记录数，如果还有待处理数据，则从头扫描
+                        #释放锁    未释放的锁，会导致任务空转
+                        for i in (1,2,3):
+                            #非超时锁，释放失败必须额外处理
+                            try:
+                                if lock_else(opener, job_id+shard_id+"_run", uuid, "standby"):
+                                    break
+                            except:
+                                #上报错误
+    #                            self._logger.info("锁异常，未能释放，请清理： %s", job_id+shard_id+"_run")
+                                pass
+                            time.sleep(0.001)
+                        if cnt>0:
+                            #重置分片位置
+                            shard_id=1
+                            shard_inc=shard_inc+1
+                        #暂停一小会
+                        time.sleep(1)
+            
+                return mtx_func
+        
+            self.mtx_run_gen = mutex_run_gen
+
+            def inner(func):
+                return func
+
+            return inner
+        
+        #调度锁
+        def mutex(self, lock=None, lock_else=None, heartbeat=None,
                   unactive_interval=datetime.timedelta(seconds=30), opener=None):
 
             def mutex_func_gen(func, job_id, uuid, role):
                 #重要：不要引入外部thread\queue\等数据，降导致序列化错误
-    #            opener=None #todo:序列化时，需要确保这里指向空（不引入线程锁）、反序列化时时恢复环境，以便代码执行
                 def mtx_func(** options):
                     if lock:#装配
                         if lock(opener, job_id, uuid, role, unactive_interval): #加锁
                             result = func( ** options )#干活
+                            #超时锁，释放失败影响不大
                             lock_else(opener, job_id, uuid, role) #释放
                             return result
                     else:#不装配
@@ -210,7 +296,7 @@ def MutexSchedulerProxy(Scheduler):
                                 lock_attrs['schedulers'] = set()
                             lock_attrs['schedulers'].add(self.uuid) #持锁人
                             #更新
-                            heartbeat(ip, now, opener, job_id, ** lock_attrs)#todo:返回值写入lock？
+                            heartbeat(opener, ip, now, job_id, ** lock_attrs)#todo:返回值写入lock？
                             return lock_attrs
                         else: 
                             #未通过
@@ -260,7 +346,12 @@ def MutexSchedulerProxy(Scheduler):
         #            options.setdefault("id", "{}.{}".format(func.__module__, func.__name__))
                 else:
                     job_id = options['id']
+                    
+                #todo:处理分片锁
+                if hasattr(self, 'mtx_run_gen'):
+                    func = self.mtx_run_gen(func, job_id)
 
+                #处理任务锁
                 if hasattr(self, 'mtx_func_gen'):
                     func = self.mtx_func_gen(func, job_id, self.uuid, self.role)
 
@@ -324,18 +415,56 @@ if __name__=='__main__':
     i = 0
 
 #    @sched.cron_schedule(trigger='cron', second = '*')
-    @sched.scheduled_job(trigger='cron', id="job11111111", kwargs={"aa":'lkjadslfkjsaldfkj',"bb":'bb'}, second = '*/1', jobstore='mysql')
+    @sched.scheduled_job(trigger='cron', id="job11111111", replace_existing=True, kwargs={"aa":'lkjadslfkjsaldfkj',"bb":'bb'}, second = '*/1', jobstore='mysql')
 #    @sched.mutex(lock = lock, heartbeat = hb, lock_else = le, opener=lock_store)
     @sched.mutex(lock = rlo, heartbeat = rhb, lock_else = rle, opener=lock_store, unactive_interval=30)
+#    @sched.mutex_run(lock = rlo, heartbeat = rhb, lock_else = rle, opener=lock_store, unactive_interval=30, size=10, _shards=((1, 10),(11, 20)))
     # 由job向业务传递分片信息
-    def job(aa="",bb=""):
-        import time
-        logging.info("%s, %s", time.time(), aa)
-        print(time.time(), aa)
-        global i
-        i += 1
-        print(i)
-        time.sleep(5)
+    def job(aa="",bb="",shard=(1,10)):
+        #待处理分片，从1开始
+        shards=set((1,))
+        shard_id=1
+        while True:
+            #分片已经处理完
+            if not shards:
+                return 0
+            #锁分片
+            while True:
+                if rlo(lock_store, job_id, shard_id, 0):
+                    shards.remove(shard_id)#移除处理的分片
+                    shard_id=shard_id+1#准备下一分片
+                    break
+                else:
+                    shards.add(shard_id)#记录未处理的分片
+                    shard_id=shard_id+1
+            #处理分片，确保分片参数有效覆盖任务数据 -- begin
+            #select * from dual where state=0 and id>shard[0] and id<shard[1] order by updated
+            items = ({"key":"val1"},{"key":"val2"})
+            if items:
+                for item in items:
+#                    #收到退出信号
+#                    if sigle=='exit':
+#                        return 1
+#                    #收到暂停信号
+#                    elif sigle=='pause':
+#                        return 2
+#                    #收到恢复信号
+#                    elif sigle=='resume':
+#                        return 3
+                    #todo: 干活
+                    print(item)
+                #通知框架是否有其他分片数据
+                #items = select * from dual where state=0 limit 1;
+#                return len(items)
+            #处理分片，确保通知调度框架分片命中记录数 -- end
+                #释放锁
+                rle(lock_store, job_id, shard_id)
+            else:
+                #重置分片位置
+                shard_id=1
+#                return 0
+            #暂停一小会
+            time.sleep(10)
        
 #    import pickle
 #    print(job)
