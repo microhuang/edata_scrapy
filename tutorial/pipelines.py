@@ -27,8 +27,16 @@ class EdataPipeline(object):
 #        cls.file = open('/tmp/items.json', 'w+', encoding='utf-8')
         
     def process_item(self, item, spider):
-        line = json.dumps(dict(item), ensure_ascii=False, sort_keys=False) + "\n"
-        self.file.write(line)
+        #todo:xxxx
+        if item.__class__.__name__=='JobcnSearchJsonItem':
+            companys = json.loads(item['companys'])
+            for c in companys:
+                line = c + "\n"
+                self.file.write(line)
+        
+#        line = json.dumps(dict(item), ensure_ascii=False, sort_keys=False) + "\n"
+#        self.file.write(line)
+        
 #        line = json.dumps(dict(item),ensure_ascii=False) + "\n"
 ##        self.file = open('/tmp/items.json', 'w+', encoding='utf-8')
 #        self.file.write(line)
