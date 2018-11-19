@@ -38,7 +38,7 @@ def err_listener(ev):
 # expire 锁超时时间，建议为分布节点时间同步误差略大
 def rlo(opener, key=None, owner=None, role=None, expire=3):
     assert role in ("work","standby"), "MutexScheduler.lock参数值错误，role有效值：work、standby！"
-    script = "if KEYS[3]=='work' and redis.call('sismember', KEYS[1], KEYS[2])==1 or KEYS[3]=='standby' and redis.call('exists', KEYS[1])==1 then return 0 else redis.call('sadd', KEYS[1], KEYS[2]); redis.call('expire', KEYS[1], ARGV[1]); return 1 end"
+    script = "if KEYS[3]=='work' and redis.call('sismember', KEYS[1], KEYS[2])==1 or KEYS[3]=='standby' and redis.call('exists', KEYS[1])==1 then return 0 else redis.call('sadd', KEYS[1], KEYS[2]); if ARGV[1]>0 then redis.call('expire', KEYS[1], ARGV[1]); end return 1 end"
     #eval <script> 3 job_id1 scheduler_id standby 300
 #    print(99999, job_id, scheduler_id, role)
     result = opener.register_script(script)(keys=[key, owner, role], args=[expire])
@@ -150,6 +150,7 @@ def MutexSchedulerProxy(Scheduler):
             self.uuid = uuid4().hex
             self.role = role #work:自己没有持有锁就可以获得锁、standby：任何人没有持有锁才可以获得锁
     #        self.ip = get_ip('eth0')
+            self._logger.info("请确保调度器、锁、业务库，尽可能时间同步！")
             self._logger.info("Scheduler: %s, Role: %s", self.uuid,self.role)
 
     #    def __getstate__(self):
@@ -231,6 +232,9 @@ def MutexSchedulerProxy(Scheduler):
                             #重置分片位置
                             shard_id=1
                             shard_inc=shard_inc+1
+                        else:
+                            #任务完成
+                            return 0
                         #暂停一小会
                         time.sleep(1)
             
@@ -246,7 +250,6 @@ def MutexSchedulerProxy(Scheduler):
         #调度锁
         def mutex(self, lock=None, lock_else=None, heartbeat=None,
                   unactive_interval=datetime.timedelta(seconds=30), opener=None):
-
             def mutex_func_gen(func, job_id, uuid, role):
                 #重要：不要引入外部thread\queue\等数据，降导致序列化错误
                 def mtx_func(** options):
@@ -328,8 +331,6 @@ def MutexSchedulerProxy(Scheduler):
             self.mtx_func_gen = mutex_func_gen
 
             def inner(func):
-    #            self.mtx_func_gen = mutex_func_gen
-    #            pass
                 return func
 
             return inner

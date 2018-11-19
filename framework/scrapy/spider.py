@@ -65,24 +65,24 @@ class EdataSpider(RedisSpider):
         #从配置库获取这些数据，配置过多时可以排序优化资源路由算法
         # url => next_url: Next、UserAgent、下一个延迟时间、下一次间隔时间/去重时间、使用模拟浏览器
         # 1、精确匹配match，2、正则匹配search，3、前缀匹配starts
-        self.request_res_route = {'http://localhost:8081/':{'Type':'match','Next':'Local','UA':'','Delay':2,'Frequency':3600,'UseSelenium':True,'cookieLess':True,'hasStart':False,'Proxy':'http://127.0.0.1:8123'},
-                         'https://www.baidu.com/':{'Next':'Baidu'},
-                         'http://www.sina.com.cn/':{'Next':'Sina'},
-                         re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'Next':'BaiduList'},
-                         re.compile(r'https://passport.weibo.com/visitor/visitor\?'):{'Next':'WeiboPassport'},#需要处理这个链接才能进入页面
-                         'https://github.com/login?return_to=':{'Type':'starts','Next':'GithubLogin','LoginUser':'yyyyyy','LoginPass':'xxxxxx'},
+        self.request_res_route = {'http://localhost:8081/':{'type':'match','next':'Local','userAgent':'','delay':2,'frequency':3600,'useSelenium':True,'cookieLess':True,'hasStart':False,'proxy':'http://127.0.0.1:8123'},
+                         'https://www.baidu.com/':{'next':'Baidu'},
+                         'http://www.sina.com.cn/':{'next':'Sina'},
+                         re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'next':'BaiduList'},
+                         re.compile(r'https://passport.weibo.com/visitor/visitor\?'):{'next':'WeiboPassport'},#需要处理这个链接才能进入页面
+                         'https://github.com/login?return_to=':{'type':'starts','next':'GithubLogin','loginUser':'yyyyyy','loginPass':'xxxxxx'},
                          }
         # url => item
         # 1、精确匹配，2、正则匹配，3、前缀匹配
-        self.item_res_route = {'http://localhost:8081/':{'Item':'Local'},
-                      'https://www.baidu.com/':{'Item':'Baidu'},
-                      'http://www.sina.com.cn/':{'Item':'Sina'},
+        self.item_res_route = {'http://localhost:8081/':{'item':'Local'},
+                      'https://www.baidu.com/':{'item':'Baidu'},
+                      'http://www.sina.com.cn/':{'item':'Sina'},
                       #re.compile(r'https://www.baidu.com/s\?wd=\S+'):{'Item':'BaiduList'},
-                      re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):{'Item':'CsdnArticle'},
-                      re.compile(r'https://media.weibo.cn/article?id=\d+'):{'Item':'WeiboMediaArticleItem'},
-                      re.compile(r'https://media.weibo.cn/article/amp?id=\d+'):{'Item':'WeiboMediaArticleItem'},
-                      re.compile(r'https://weibo.com/u/\d+'):{'Item':'WeiboMediaArticleItem'},
-                      'https://github.com/settings/profile':{'Item':'GithubProfile'},
+                      re.compile(r'https://blog.csdn.net/\w+/article/details/\d+'):{'item':'CsdnArticle'},
+                      re.compile(r'https://media.weibo.cn/article?id=\d+'):{'item':'WeiboMediaArticleItem'},
+                      re.compile(r'https://media.weibo.cn/article/amp?id=\d+'):{'item':'WeiboMediaArticleItem'},
+                      re.compile(r'https://weibo.com/u/\d+'):{'item':'WeiboMediaArticleItem'},
+                      'https://github.com/settings/profile':{'item':'GithubProfile'},
                       }
 
         #后续改为配置文件
@@ -108,14 +108,17 @@ class EdataSpider(RedisSpider):
         if __debug__:
             result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
         else: # -O
-            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as next, 1 as hasstart from conf_request')
+            result = session.execute('select * from conf_request')
         res = result.fetchall()
         for i in res:
             if i['type']=="match":
-                self.request_res_route[i['route']] = {'Next':i['next'],}
+                self.request_res_route[i['route']] = dict(i)
+            elif i['type']=="compare" or i['type']=="search":
+                self.request_res_route[i['route']] = dict(i)
+            elif i['type']=="starts":
+                self.request_res_route[i['route']] = dict(i)
             else:
-                self.request_res_route[re.compile(i['route'])] = {'Next':i['next'],}
-                
+                raise "不支持的url配置！"
         session.close()
         pass
 

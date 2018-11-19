@@ -175,8 +175,8 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         # request_res_route
         if spider.request_res_route:
             for k in spider.request_res_route:
-                if k==request.url or 'Type' in spider.request_res_route[k] and spider.request_res_route[k]['Type']=='starts' and request.url.startswith(k) or isinstance(k, re.Pattern) and re.match(k,request.url):
-                    spider.logger.info('request_res_route_key: %s' % k)
+                if k==request.url or 'type' in spider.request_res_route[k] and spider.request_res_route[k]['type']=='starts' and request.url.startswith(k) or isinstance(k, re.Pattern) and re.match(k,request.url):
+                    spider.logger.info('request_res_route_key: %s => %s' % (k, spider.request_res_route[k]))
                     spider.request_res_route_key = k
                     break
 
@@ -204,7 +204,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             del request.meta['proxy']
             
         # Selenium
-        if spider.request_res_route_key and spider.request_res_route and 'UseSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UseSelenium']==True:
+        if spider.request_res_route_key and spider.request_res_route and 'useSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['useSelenium']==True:
             self.use_selenium = True
             if not self.browser:
                 self.browser = webdriver.PhantomJS()

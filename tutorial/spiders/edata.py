@@ -27,7 +27,7 @@ class EdataSpider(EdataSpider):
     pass
     
 class ___EdataSpider(RedisSpider):
-    name = 'edata'
+    name = '---edata'
     redis_key = 'edata:start_urls'
 
     request_res_route_key = ''
