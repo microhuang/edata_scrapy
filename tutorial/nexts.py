@@ -5,7 +5,9 @@ from scrapy.http import Request,FormRequest
 
 import re, time
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse,parse_qs,urlunparse,urlencode
+
+import json
 
 
 class LocalNext(object):
@@ -127,10 +129,51 @@ class GithubLoginNext(object):
                                             dont_filter=request.dont_filter)
         return request
 
-
+#https://www.jobcn.com/search/result_servlet.ujson?
+class JobcnSearchJsonNext(object):
+    @staticmethod
+    def extract(response,spider):
+        up = list(urlparse(response.url))
+        domain = up[0]+'://'+up[1]
+        
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        
+        rows = json.loads(response_body)['rows']
+#        return None
+        if len(rows)>0:
+#            for row in rows:
+#                #详情
+#                next_url = domain+"/position/detail.xhtml?redirect=0&posId="+row['posId']+"&comId="+row['comId']+"&s=search/advanced&acType=1"
+#                dont_filter = False
+#                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+#                yield req
+            #翻页
+            pq = parse_qs(up[4])
+            if pq['p.pageNo'][0]:
+                pq['p.pageNo'][0] = str(int(pq['p.pageNo'][0])+1)
+            else:
+                pq['p.pageNo'][0] = ['2']
+            up[4] = urlencode(pq, True)
+            next_url = urlunparse(up)
+            dont_filter = False
+            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+            yield req
+        
 class JobcnSearchNext(object):
     @staticmethod
     def extract(response,spider):
+#        ['<div class="item_box" data-applieddate="" group="0" ga=\'{posId:"3819846",bidding:"false",detailId:0,fromKeyWord:"",fromArea:"",type:1}\' actype="6" onclick="_jsp.Grid.Detail.toggle(0,\'3819846\',this,event)" onmousedown="_jsp.Grid.Detail.mouseDown()">\n          <div class="item_job"> <a class="job_check " data-value="3819846"></a>\n            <div class="job_main  ">\n              <div class="job_title"> <span class="hide mapIcon mComId460308"></span>\n                <h4 class="job_name"><a href="/position/detail.xhtml?redirect=0&amp;posId=3819846&amp;comId=460308&amp;s=search/advanced&amp;acType=1" target="_blank">模具设计师</a>\n                  \n                        <!-- 新增急招-->\n                  \n                </h4>\n              </div>\n              \n              <div class="job_info "> <a href="/position/home.xhtml?redirect=0&amp;comId=460308&amp;s=search/advanced&amp;acType=2" target="_blank" title="钜佳合成金属制品（深圳）有限公司">钜佳合成金属制品（深圳）有限公司</a>\n                 <a class="certificate_icon2" style="cursor:pointer;" title="证照已提交" href="/position/certificate.xhtml?comId=460308" target="_blank">\xa0</a> <a href="/position/album.xhtml?redirect=0&amp;comId=460308&amp;s=search/advanced" target="_blank" class="pic_com" comid="460308" comname="钜佳合成金属制品（深圳）有限公司" jobs="模具设计师" title="企业图片展示">\xa0</a> \n                <p> <span>|</span>\n                  深圳<span>|</span>中专以上<span>|</span>3年经验<span>|</span><span style="font-weight:bold;color:#5B6A84">¥5-7K</span><span>|</span>\n                  <span class="view-pos-date">02分钟前刷新</span>\n                  <span class="view-insert-date">02分钟前刷新</span>\n                  \n                  </p>\n              </div>\n              <div id="pos_desc_0">\n                <div id="job_desc_0" class="job_desc " title="点击查看详情"> 要求：1.性别不限，2名，20-40周岁，中专及以上学历；      \r\n      2.三年以上五金连续模具设计及制作相关工作经验；\r\n      3.熟悉操作CAD、Solidworks、quickpres、ERP、word、Excel等软件；\r\n      4.对数字敏感、责任心强、有良好的沟通能力、有一定的抗压...\n                </div>\n                <div class="job_operate" data-posid="3819846">\n                \t<a href="javascript:;" class="jobcn_apply" actype="4" onclick="jobcn.Person.Position.apply(\'3819846\');">应聘</a>\n                \t<a href="javascript:;" data-isadd="true" id="desc_collect_3819846" class="jobcn_collect collect_3819846" actype="5" onclick="jobcn.Search.Position.MyFavourite.add(\'3819846\', this, event)"><span class="text">收藏</span></a>\n                \t<span class="open">点击任意位置可展开<i></i></span> </div>\n              </div>\n              <div id="pos_detail_0" class="job_detail"> </div>\n            </div>\n          </div>\n        </div>']
+#        print(4444444,response.xpath('//*[@id="result_data"]/div/div[1]').extract())
+#        return None
+    
         up = urlparse(response.url)
         domain = up.scheme+'://'+up.netloc
         response_body = ''
@@ -153,12 +196,31 @@ class JobcnSearchNext(object):
                 req = Request(url=domain+next_url, callback=spider.parse, dont_filter=dont_filter)
                 yield req
             #列表翻页
+#curl 'https://www.jobcn.com/search/result_servlet.ujson?s=search%2Ftop' \
+#-XPOST \
+#-H 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' \
+#-H 'Accept: application/json, text/javascript, */*; q=0.01' \
+#-H 'Host: www.jobcn.com' \
+#-H 'Accept-Language: zh-cn' \
+#-H 'Accept-Encoding: br, gzip, deflate' \
+#-H 'Origin: https://www.jobcn.com' \
+#-H 'Referer: https://www.jobcn.com/search/result.xhtml?s=search%2Ftop&p.includeNeg=1&p.sortBy=postdate&p.jobLocationId=&p.jobLocationTown=&p.jobLocationTownId=&p.querySwitch=0&p.keyword=solidwork%3B+solidworks%3B+sw%3B+%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6%3B+%BD%E1%B9%B9%B9%A4%B3%CC%CA%A6%3B+%C9%E8%BC%C6%B9%A4%B3%CC%CA%A6%3B+%CF%EE%C4%BF%BE%AD%C0%ED&p.keywordType=2&p.workLocation=' \
+#-H 'Connection: keep-alive' \
+#-H 'Content-Length: 5646' \
+#-H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.1 Safari/605.1.15' \
+#-H 'Cookie: Hm_lpvt_8180e13f3ce10ef1c58778a9785ec8fc=1542613364; Hm_lvt_8180e13f3ce10ef1c58778a9785ec8fc=1542295053; __utma=75346313.672548434.1542295053.1542605389.1542600826.5; __utmb=75346313.35.6.1542613235476; __utmc=75346313; __utmv=75346313.|2=member=IM=1; __utmz=75346313.1542295053.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); searchCondition=c29saWR3b3JrOyBzb2xpZHdvcmtzOyBzdzsgu%2FrQtbmks8zKpjsgveG5ubmks8zKpjsgyei8xrmks8zKpjsgz%2B7Ev76twO0%3D--2----------366-10-70--11-3-15-40-100000; __utmt=1; c_pos_viewhis=2944912%2C4005007%2C3926670%2C2039133%2C3995839; c_pos_viewhis_syn=false; hlkw=; JCNID=jcnp60179331678804c93d79' \
+#-H 'X-Requested-With: XMLHttpRequest' \
+#--data 'p.querySwitch=0&p.searchSource=default&p.keyword=solidwork%3B+solidworks%3B+sw%3B+%E6%9C%BA%E6%A2%B0%E5%B7%A5%E7%A8%8B%E5%B8%88%3B+%E7%BB%93%E6%9E%84%E5%B7%A5%E7%A8%8B%E5%B8%88%3B+%E8%AE%BE%E8%AE%A1%E5%B7%A5%E7%A8%8B%E5%B8%88%3B+%E9%A1%B9%E7%9B%AE%E7%BB%8F%E7%90%86&p.keyword2=&p.keywordType=2&p.pageNo=255&p.pageSize=40&p.sortBy=postdate&p.statistics=false&p.totalRow=1000&p.cachePageNo=1&p.jobnature=15&p.comProperity=0&p.JobLocationTown=&p.salary=-1&p.highSalary=100000&p.salarySearchType=1&p.includeNeg=1&p.inputSalary=-1&p.workYear1=-1&p.workYear2=11&p.degreeId1=10&p.degreeId2=70&p.posPostDate=366&p.otherFlag=3'
+#            https://www.jobcn.com/search/result.xhtml?s=search%2Ftop&p.includeNeg=1&p.sortBy=postdate&p.jobLocationId=&p.jobLocationTown=&p.jobLocationTownId=&p.querySwitch=0&p.keyword=solidwork%3B+solidworks%3B+sw%3B+%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6%3B+%BD%E1%B9%B9%B9%A4%B3%CC%CA%A6%3B+%C9%E8%BC%C6%B9%A4%B3%CC%CA%A6%3B+%CF%EE%C4%BF%BE%AD%C0%ED&p.keywordType=2&p.workLocation=
+#            https://www.jobcn.com/search/result.xhtml?s=search%2Ftop&p.includeNeg=1&p.sortBy=postdate&p.jobLocationId=&p.jobLocationTown=&p.jobLocationTownId=&p.querySwitch=0&p.keyword=solidwork%3B+solidworks%3B+sw%3B+%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6%3B+%BD%E1%B9%B9%B9%A4%B3%CC%CA%A6%3B+%C9%E8%BC%C6%B9%A4%B3%CC%CA%A6%3B+%CF%EE%C4%BF%BE%AD%C0%ED&p.keywordType=2&p.workLocation=#P2
+#            https://www.jobcn.com/search/result.xhtml?s=search%2Ftop&p.includeNeg=1&p.sortBy=postdate&p.jobLocationId=&p.jobLocationTown=&p.jobLocationTownId=&p.querySwitch=0&p.keyword=solidwork%3B+solidworks%3B+sw%3B+%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6%3B+%BD%E1%B9%B9%B9%A4%B3%CC%CA%A6%3B+%C9%E8%BC%C6%B9%A4%B3%CC%CA%A6%3B+%CF%EE%C4%BF%BE%AD%C0%ED&p.keywordType=2&p.workLocation=#P255
             #todo
 #        next_url = "http://localhost:8081/"
 #        dont_filter = False
 #        req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
 #        yield req
     
+
     
 
 

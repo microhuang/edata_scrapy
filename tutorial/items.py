@@ -6,6 +6,7 @@
 # https://doc.scrapy.org/en/latest/topics/items.html
 
 import scrapy
+import json
 
 
 class TutorialItem(scrapy.Item):
@@ -99,9 +100,48 @@ class GithubProfileItem(scrapy.Item):
         item['title'] = response.xpath('//title/text()').extract()
         return item
     
-class JobcnPositionDetailItem(scrapy.Item):
-    title = scrapy.Field()
+class JobcnSearchJsonItem(scrapy.Item):
+    companys = scrapy.Field()
     
     @staticmethod
     def extract(response):
-        print(55555)
+        item = JobcnSearchJsonItem()
+        
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        
+        rows = json.loads(response_body)['rows']
+        companys = set()
+        if len(rows)>0:
+            for row in rows:
+                companys.add(row['comName'])
+        item['companys'] = json.dumps(list(companys),ensure_ascii=False)
+            
+        return item
+    
+class JobcnPositionDetailItem(scrapy.Item):
+    company = scrapy.Field()
+    
+    @staticmethod
+    def extract(response):
+#        response_body = ''
+#        try:
+#            response_body = str(response.body, encoding='utf-8')
+#        except:
+#            try:
+#                response_body = str(response.body, encoding='gbk')
+#            except:
+#                response_body = str(response.body, encoding='gb2312')
+#            pass
+        
+        item = JobcnPositionDetailItem()
+        
+        item['company'] = response.xpath('//*[@id="menuHeader"]/div[1]/div[2]/h2/text()').extract()[0]
+        return item

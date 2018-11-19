@@ -98,7 +98,7 @@ DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
 SCHEDULER_PERSIST = True
 
 ITEM_PIPELINES = {
-    'tutorial.pipelines.EdataPipeline': 300
+    'tutorial.pipelines.TutorialPipeline': 300
 }
 
 
