@@ -52,7 +52,8 @@ class EdataSpider(RedisSpider):
                       }
     '''
 
-    def __init__(self):
+    def __init__(self, name=None, **kwargs):
+        super(EdataSpider, self).__init__(name, **kwargs)
         #初始配置
 #        self.setup()
         #注册空闲时更新配置
@@ -69,6 +70,8 @@ class EdataSpider(RedisSpider):
         self.setup(self,crawler=crawler)
         return obj
     
+    #处理request_res_route、item_res_route
+    #可重载，以便从其他配置源获取数据
     def setup(self, crawler=None):
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
