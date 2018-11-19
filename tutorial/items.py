@@ -101,6 +101,7 @@ class GithubProfileItem(scrapy.Item):
         return item
     
 class JobcnSearchJsonItem(scrapy.Item):
+    url = scrapy.Field()
     companys = scrapy.Field()
     
     @staticmethod
@@ -122,6 +123,7 @@ class JobcnSearchJsonItem(scrapy.Item):
         if len(rows)>0:
             for row in rows:
                 companys.add(row['comName'])
+        item['url'] = response.url
         item['companys'] = json.dumps(list(companys),ensure_ascii=False)
             
         return item

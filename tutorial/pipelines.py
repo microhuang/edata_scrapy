@@ -8,6 +8,8 @@
 
 import json
 
+import codecs
+
 from scrapy.exporters import JsonItemExporter
 
 
@@ -25,18 +27,21 @@ class EdataPipeline(object):
 #        cls.file = open('/tmp/items.json', 'w+', encoding='utf-8')
         
     def process_item(self, item, spider):
+        line = json.dumps(dict(item), ensure_ascii=False, sort_keys=False) + "\n"
+        self.file.write(line)
 #        line = json.dumps(dict(item),ensure_ascii=False) + "\n"
 ##        self.file = open('/tmp/items.json', 'w+', encoding='utf-8')
 #        self.file.write(line)
 ##        self.file.close()
-        self.exporter.export_item(item)
+#        self.exporter.export_item(item)
         return item
 
     def open_spider(self,spider):
-        self.file = open('items.json', 'wb')
-        self.exporter = JsonItemExporter(self.file,encoding='utf-8',ensure_ascii=False)
-        self.exporter.start_exporting()
+        self.file = codecs.open('/tmp/jobcn.json', 'wb', encoding='utf-8')
+#        self.file = open('items.json', 'wb')
+#        self.exporter = JsonItemExporter(self.file,encoding='utf-8',ensure_ascii=False)
+#        self.exporter.start_exporting()
         
     def close_spider(self, spider):
-        self.exporter.finish_exporting()
+#        self.exporter.finish_exporting()
         self.file.close()
