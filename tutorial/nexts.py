@@ -5,6 +5,8 @@ from scrapy.http import Request,FormRequest
 
 import re, time
 
+from urllib.parse import urlparse
+
 
 class LocalNext(object):
     #必须由yield Request返回
@@ -125,5 +127,38 @@ class GithubLoginNext(object):
                                             dont_filter=request.dont_filter)
         return request
 
+
+class JobcnSearchNext(object):
+    @staticmethod
+    def extract(response,spider):
+        up = urlparse(response.url)
+        domain = up.scheme+'://'+up.netloc
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        #提取所有a链接
+        next_urls = re.finditer(r'<a .*?href="(.*?)".*?>(.*?)</a>', response_body)
+        for url in next_urls:
+            next_url = url.group(1)
+            next_a = url.group(2)
+            #岗位详情
+            if next_url.startswith('/position/detail.xhtml?'):
+                dont_filter = False
+                req = Request(url=domain+next_url, callback=spider.parse, dont_filter=dont_filter)
+                yield req
+            #列表翻页
+            #todo
+#        next_url = "http://localhost:8081/"
+#        dont_filter = False
+#        req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+#        yield req
+    
+    
 
 

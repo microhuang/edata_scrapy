@@ -98,3 +98,10 @@ class GithubProfileItem(scrapy.Item):
         #item['response'] = response
         item['title'] = response.xpath('//title/text()').extract()
         return item
+    
+class JobcnPositionDetailItem(scrapy.Item):
+    title = scrapy.Field()
+    
+    @staticmethod
+    def extract(response):
+        print(55555)

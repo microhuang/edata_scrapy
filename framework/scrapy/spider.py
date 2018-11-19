@@ -97,13 +97,17 @@ class EdataSpider(RedisSpider):
         if __debug__:
             result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as item')
         else: # -O
-            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as "type", "Baidu" as item from conf_item')
+            result = session.execute('select * from conf_item')
         res = result.fetchall()
         for i in res:
             if i['type']=="match":
-                self.item_res_route[i['route']] = {'Item':i['item'],}
+                self.item_res_route[i['route']] = dict(i)
+            elif i['type']=="compare" or i['type']=="search":
+                self.item_res_route[i['route']] = dict(i)
+            elif i['type']=="starts":
+                self.item_res_route[i['route']] = dict(i)
             else:
-                self.item_res_route[re.compile(i['route'])] = {'Item':i['item'],}
+                raise "不支持的url配置！"
                 
         if __debug__:
             result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
@@ -165,7 +169,7 @@ class EdataSpider(RedisSpider):
 
         try:
             #从Middleware定位request资源路由
-            url = eval(self.request_res_route[self.request_res_route_key]['Next']+'Next').extract(response,self)
+            url = eval(self.request_res_route[self.request_res_route_key]['next']+'Next').extract(response,self)
             if url:
                 for r in url:
                     yield r
@@ -183,7 +187,7 @@ class EdataSpider(RedisSpider):
             '''
         except KeyError:
             pass
-        #except:
+        #except NameError:
             pass
             
         #return url
@@ -194,9 +198,9 @@ class EdataSpider(RedisSpider):
         
         try:
             for k in self.item_res_route:
-                if k==response.url or isinstance(k, re.Pattern) and re.match(k,response.url):
+                if k==response.url or 'type' in self.item_res_route[k] and self.item_res_route[k]['type']=='starts' and response.url.startswith(k) or isinstance(k, re.Pattern) and re.match(k,response.url):
                     self.logger.info('item_res_route_key: %s' % k)
-                    item = eval(self.item_res_route[k]['Item']+'Item').extract(response)
+                    item = eval(self.item_res_route[k]['item']+'Item').extract(response)
                     self.item_res_route_key = k
                     break
         except KeyError:
