@@ -129,12 +129,27 @@ class GithubLoginNext(object):
                                             dont_filter=request.dont_filter)
         return request
 
+def url_query_string_update(url,key,value):
+    up = list(urlparse(url))
+    pq = parse_qs(up[4])
+    
+#    if key in pq and pq[key][0]:
+#        pq[key][0] = str(int(pq[key][0])+1)
+#    else:
+#        pq[key][0] = '2'
+        
+    pq[key][0] = value
+    up[4] = urlencode(pq, True)
+    url = urlunparse(up)
+    return url
+    
 #https://www.jobcn.com/search/result_servlet.ujson?
 class JobcnSearchJsonNext(object):
     @staticmethod
     def extract(response,spider):
-        up = list(urlparse(response.url))
-        domain = up[0]+'://'+up[1]
+        response_url = response.url
+        up = list(urlparse(response_url))
+#        domain = up[0]+'://'+up[1]
         
         response_body = ''
         try:
@@ -157,12 +172,14 @@ class JobcnSearchJsonNext(object):
 #                yield req
             #翻页
             pq = parse_qs(up[4])
-            if pq['p.pageNo'][0]:
-                pq['p.pageNo'][0] = str(int(pq['p.pageNo'][0])+1)
+            if 'p.pageNo' in pq and pq['p.pageNo'][0]:
+#                pq['p.pageNo'][0] = str(int(pq['p.pageNo'][0])+1)
+                next_url = url_query_string_update(response_url, 'p.pageNo', str(int(pq['p.pageNo'][0])+1))
             else:
-                pq['p.pageNo'][0] = ['2']
-            up[4] = urlencode(pq, True)
-            next_url = urlunparse(up)
+#                pq['p.pageNo'][0] = '2'
+                next_url = url_query_string_update(response_url, 'p.pageNo', '2')
+#            up[4] = urlencode(pq, True)
+#            next_url = urlunparse(up)
             dont_filter = False
             req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
             yield req

@@ -15,10 +15,12 @@ from scrapy import signals
 #from scrapy.xlib.pydispatch import dispatcher
 from pydispatch import dispatcher
 
+import re
+
+import json
+
 from tutorial.items import *
 from tutorial.nexts import *
-
-import re
 
 
 class EdataSpider(RedisSpider):
@@ -68,6 +70,10 @@ class EdataSpider(RedisSpider):
         return obj
     
     def setup(self, crawler=None):
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+        from collections import namedtuple
+        
         #从配置库获取这些数据，配置过多时可以排序优化资源路由算法
         # url => next_url: Next、UserAgent、下一个延迟时间、下一次间隔时间/去重时间、使用模拟浏览器
         # 1、精确匹配match，2、正则匹配search，3、前缀匹配starts
@@ -90,11 +96,8 @@ class EdataSpider(RedisSpider):
                       re.compile(r'https://weibo.com/u/\d+'):{'item':'WeiboMediaArticleItem'},
                       'https://github.com/settings/profile':{'item':'GithubProfile'},
                       }
-
+        
         #后续改为配置文件
-        from sqlalchemy import create_engine
-        from sqlalchemy.orm import sessionmaker
-        from collections import namedtuple
         
         dburi = ''
         if not crawler:
@@ -147,7 +150,6 @@ class EdataSpider(RedisSpider):
         meta = None
         try:
             #{'url':'xxxxx','meta':{}}
-            import json
             jurl = json.loads(url)
             url = jurl['url']
             meta = jurl['meta']

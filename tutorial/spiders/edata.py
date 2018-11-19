@@ -24,6 +24,7 @@ import re
 
 
 class EdataSpider(EdataSpider):
+    name = 'edata'
     pass
     
 class ___EdataSpider(RedisSpider):
