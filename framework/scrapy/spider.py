@@ -52,7 +52,7 @@ class EdataSpider(RedisSpider):
 
     def __init__(self):
         #初始配置
-        self.setup()
+#        self.setup()
         #注册空闲时更新配置
         dispatcher.connect(self.setup, signals.spider_idle)
         #
@@ -61,7 +61,13 @@ class EdataSpider(RedisSpider):
         #dispatcher.connect(self.schedule_next_requests, signal=signals.request_scheduled)
         pass
 
-    def setup(self):
+    @classmethod
+    def from_crawler(self, crawler, *args, **kwargs):
+        obj = super(EdataSpider, self).from_crawler(crawler, *args, **kwargs)
+        self.setup(self,crawler=crawler)
+        return obj
+    
+    def setup(self, crawler=None):
         #从配置库获取这些数据，配置过多时可以排序优化资源路由算法
         # url => next_url: Next、UserAgent、下一个延迟时间、下一次间隔时间/去重时间、使用模拟浏览器
         # 1、精确匹配match，2、正则匹配search，3、前缀匹配starts
@@ -90,40 +96,49 @@ class EdataSpider(RedisSpider):
         from sqlalchemy.orm import sessionmaker
         from collections import namedtuple
         
-        engine = create_engine("mysql+mysqlconnector://root:12345678@localhost/scrapy_db")
-        session = sessionmaker(bind=engine)()
-        
-        result = None
-        if __debug__:
-            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as item')
-        else: # -O
-            result = session.execute('select * from conf_item')
-        res = result.fetchall()
-        for i in res:
-            if i['type']=="match":
-                self.item_res_route[i['route']] = dict(i)
-            elif i['type']=="compare" or i['type']=="search":
-                self.item_res_route[i['route']] = dict(i)
-            elif i['type']=="starts":
-                self.item_res_route[i['route']] = dict(i)
-            else:
-                raise "不支持的url配置！"
-                
-        if __debug__:
-            result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
-        else: # -O
-            result = session.execute('select * from conf_request')
-        res = result.fetchall()
-        for i in res:
-            if i['type']=="match":
-                self.request_res_route[i['route']] = dict(i)
-            elif i['type']=="compare" or i['type']=="search":
-                self.request_res_route[i['route']] = dict(i)
-            elif i['type']=="starts":
-                self.request_res_route[i['route']] = dict(i)
-            else:
-                raise "不支持的url配置！"
-        session.close()
+        dburi = ''
+        if not crawler:
+            dburi = self.settings.get('EDATA_URL_ROUTE_DB_URI')
+        else:
+            dburi = crawler.settings.get('EDATA_URL_ROUTE_DB_URI')#由dispatcher调用
+            
+        if not dburi:
+            self.logger.warn('缺少EDATA_URL_ROUTE_DB_URI配置！')
+        else:
+            engine = create_engine(dburi)
+            session = sessionmaker(bind=engine)()
+
+            result = None
+            if __debug__:
+                result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as item')
+            else: # -O
+                result = session.execute('select * from conf_item')
+            res = result.fetchall()
+            for i in res:
+                if i['type']=="match":
+                    self.item_res_route[i['route']] = dict(i)
+                elif i['type']=="compare" or i['type']=="search":
+                    self.item_res_route[i['route']] = dict(i)
+                elif i['type']=="starts":
+                    self.item_res_route[i['route']] = dict(i)
+                else:
+                    raise "不支持的url配置！"
+
+            if __debug__:
+                result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
+            else: # -O
+                result = session.execute('select * from conf_request')
+            res = result.fetchall()
+            for i in res:
+                if i['type']=="match":
+                    self.request_res_route[i['route']] = dict(i)
+                elif i['type']=="compare" or i['type']=="search":
+                    self.request_res_route[i['route']] = dict(i)
+                elif i['type']=="starts":
+                    self.request_res_route[i['route']] = dict(i)
+                else:
+                    raise "不支持的url配置！"
+            session.close()
         pass
 
     #假设start队列带有meta数据

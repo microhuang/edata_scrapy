@@ -112,5 +112,6 @@ USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.
 
 #HTTPERROR_ALLOWED_CODES = [422]
 
-
+#conf_item\conf_request
+EDATA_URL_ROUTE_DB_URI = "mysql+mysqlconnector://root:12345678@localhost/scrapy_db"
 
