@@ -78,8 +78,15 @@ class Job51Pipeline(object):
     
 class CjolPipeline(object):
     def process_item(self, item, spider):
-        if item.__class__.__name__=='CjolSearchJsonItem':
-            print('CjolPipeline')
+        if item.__class__.__name__=='CjolSearchItem':
+            try:
+                companys = json.loads(item['companys'])
+                for c in companys:
+                    line = c + "\n"
+                    self.file.write(line)
+            except KeyError:
+                print('缺少有效数据！')
+                pass
         return item
 
     def open_spider(self,spider):

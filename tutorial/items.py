@@ -7,6 +7,7 @@
 
 import scrapy
 import json
+from scrapy import Selector
 
 
 class TutorialItem(scrapy.Item):
@@ -201,6 +202,29 @@ class Job51SearchItem(scrapy.Item):
             
         return item
 
+class CjolSearchItem(scrapy.Item):
+    url = scrapy.Field()
+    companys = scrapy.Field()
+    
+    @staticmethod
+    def extract(response):
+        item = CjolSearchItem()
+        
+        item['url'] = response.url
+        html = json.loads(response.body)['JobListHtml']
+        if html:
+            selector = Selector(text=html)
+            selectors = selector.xpath('//*[@id="searchlist"]/ul/li[3]/a/text()').extract()
+            if selectors:
+                companys = set()
+                for s in selectors:
+#                    print(9999,s)
+                    companys.add(s)
+                item['companys'] = json.dumps(list(companys),ensure_ascii=False)
+            
+        return item
+    
+    
     
     
     

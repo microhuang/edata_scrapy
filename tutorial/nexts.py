@@ -9,6 +9,8 @@ from urllib.parse import urlparse,parse_qs,urlunparse,urlencode,quote,unquote
 
 import json
 
+from scrapy import Selector
+
 def url_query_string_update(url,key,value):
     up = list(urlparse(url))
     pq = parse_qs(up[4])
@@ -288,4 +290,22 @@ class Job51SearchNext(object):
             dont_filter = False
             req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
             yield req
+    
+    
+#http://s.cjol.com/service/joblistjson.aspx?KeywordType=3&RecentSelected=43&KeyWord=%E6%9C%BA%E6%A2%B0%E5%B7%A5%E7%A8%8B%E5%B8%88&SearchType=1&ListType=2&page=1
+class CjolSearchNext(object):
+    @staticmethod
+    def extract(response,spider):
+        next_url = response.url
+        html = json.loads(response.body)['JobListHtml']
+        if html:
+            selector = Selector(text=html)
+            companys = selector.xpath('//*[@id="searchlist"]/ul/li[3]/a/text()')
+            if companys:
+                next_url = url_query_string_update(next_url, 'page', int(parse_qs(response.url)['page'][0])+1)
+#                print(333333, next_url)
+                dont_filter = False
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+                yield req
+    
     
