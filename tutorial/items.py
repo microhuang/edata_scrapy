@@ -147,3 +147,41 @@ class JobcnPositionDetailItem(scrapy.Item):
         
         item['company'] = response.xpath('//*[@id="menuHeader"]/div[1]/div[2]/h2/text()').extract()[0]
         return item
+    
+class Job5156SearchItem(object):
+    url = scrapy.Field()
+    companys = scrapy.Field()
+    
+    @staticmethod
+    def extract(response):
+        item = Job5156SearchItem()
+        item.url = response.url
+        
+        selectors = response.xpath('/html/body/div[6]/div/div[2]/div[2]/ul/li')
+        if selectors:
+            companys = set()
+            for s in selectors:
+                print(555555,s.xpath('div/div[2]/a/text()').extract()[0])
+                companys.add(s.xpath('div/div[2]/a/text()').extract()[0])
+            item.companys = json.dumps(list(companys),ensure_ascii=False)
+        return item
+    
+class Job5156SearchJsonItem(object):
+    url = scrapy.Field()
+    companys = scrapy.Field()
+    
+    @staticmethod
+    def extract(response):
+        item = Job5156SearchJsonItem()
+        item.url = response.url
+        
+        rows = json.loads(response.body)['page']['items']
+        if rows:
+            companys = set()
+            for r in rows:
+                print(666666,r['comName'])
+                companys.add(r['comName'])
+            item.companys = json.dumps(list(companys),ensure_ascii=False)
+        
+        return item
+    

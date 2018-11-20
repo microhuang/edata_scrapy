@@ -33,6 +33,11 @@ class EdataPipeline(object):
             for c in companys:
                 line = c + "\n"
                 self.file.write(line)
+        if item.__class__.__name__=='Job5156SearchJsonItem' or item.__class__.__name__=='Job5156SearchItem':
+            companys = json.loads(item['companys'])
+            for c in companys:
+                line = c + "\n"
+                self.file.write(line)
         
 #        line = json.dumps(dict(item), ensure_ascii=False, sort_keys=False) + "\n"
 #        self.file.write(line)

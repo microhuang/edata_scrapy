@@ -5,9 +5,23 @@ from scrapy.http import Request,FormRequest
 
 import re, time
 
-from urllib.parse import urlparse,parse_qs,urlunparse,urlencode
+from urllib.parse import urlparse,parse_qs,urlunparse,urlencode,quote,unquote
 
 import json
+
+def url_query_string_update(url,key,value):
+    up = list(urlparse(url))
+    pq = parse_qs(up[4])
+    
+#    if key in pq and pq[key][0]:
+#        pq[key][0] = str(int(pq[key][0])+1)
+#    else:
+#        pq[key][0] = '2'
+        
+    pq[key][0] = value
+    up[4] = urlencode(pq, True)
+    url = urlunparse(up)
+    return url
 
 
 class LocalNext(object):
@@ -128,20 +142,6 @@ class GithubLoginNext(object):
                                             callback=request.callback,
                                             dont_filter=request.dont_filter)
         return request
-
-def url_query_string_update(url,key,value):
-    up = list(urlparse(url))
-    pq = parse_qs(up[4])
-    
-#    if key in pq and pq[key][0]:
-#        pq[key][0] = str(int(pq[key][0])+1)
-#    else:
-#        pq[key][0] = '2'
-        
-    pq[key][0] = value
-    up[4] = urlencode(pq, True)
-    url = urlunparse(up)
-    return url
     
 #https://www.jobcn.com/search/result_servlet.ujson?
 class JobcnSearchJsonNext(object):
@@ -239,5 +239,40 @@ class JobcnSearchNext(object):
     
 
     
-
-
+#http://www.job5156.com/s/result/kt0_kw-
+class Job5156SearchNext(object):
+    @staticmethod
+    def extract(response,spider):
+#        response_body = ''
+#        try:
+#            response_body = str(response.body, encoding='utf-8')
+#        except:
+#            try:
+#                response_body = str(response.body, encoding='gbk')
+#            except:
+#                response_body = str(response.body, encoding='gb2312')
+#            pass
+        
+        selectors = response.xpath('/html/body/div[6]/div/div[2]/div[2]/ul/li')
+        if selectors:
+            dont_filter = False
+            r = re.match(r".*\/kt0_kw\-(.*)\/.*",response.url)
+            if r:
+                k = r.group(1)
+                next_url = "http://www.job5156.com/s/result/ajax.json?keyword=zhanweifu&keywordType=0&posTypeList=&locationList=&taoLabelList=&degreeFrom=&propertyList=&industryList=&sortBy=0&urgentFlag=&maxSalary=&salary=&workyearFrom=&workyearTo=&degreeTo=&pageNo=2"
+                next_url = url_query_string_update(next_url, 'keyword', unquote(k))
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+                yield req
+            
+class Job5156SearchMoreNext(object):
+    @staticmethod
+    def extract(response,spider):
+        rows = json.loads(response.body)['page']['items']
+        if rows:
+            dont_filter = False
+            next_url = response.url
+            next_url = url_query_string_update(next_url, 'pageNo', int(parse_qs(response.url)['pageNo'][0])+1)
+            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+            yield req
+    
+    
