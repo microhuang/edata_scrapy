@@ -275,4 +275,17 @@ class Job5156SearchMoreNext(object):
             req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
             yield req
     
+#https://search.51job.com/list/000000,000000,0000,00,9,99,%25E6%259C%25BA%25E6%25A2%25B0%25E5%25B7%25A5%25E7%25A8%258B%25E5%25B8%2588,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+#https://search.51job.com/list/080200,000000,0000,00,9,99,%25E6%259C%25BA%25E6%25A2%25B0%25E5%25B7%25A5%25E7%25A8%258B%25E5%25B8%2588,2,3.html?lang=c&stype=1&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+class Job51SearchNext(object):
+    @staticmethod
+    def extract(response,spider):
+        selectors = response.xpath('//*[@id="resultList"]/div')
+        if selectors:
+            page = re.match(r'(?P<b>.*,)(?P<pageNo>[\d]+)(?P<e>.html\?.*)', response.url).group("pageNo")
+            page = str(int(page)+1)
+            next_url = re.sub(r'(?P<b>.*,)(?P<pageNo>[\d]+)(?P<e>.html\?.*)', '\g<b>'+page+'\g<e>', response.url)
+            dont_filter = False
+            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+            yield req
     

@@ -58,3 +58,32 @@ class EdataPipeline(object):
     def close_spider(self, spider):
 #        self.exporter.finish_exporting()
         self.file.close()
+
+
+class Job51Pipeline(object):
+    def process_item(self, item, spider):
+        if item.__class__.__name__=='Job51SearchItem':
+            companys = json.loads(item['companys'])
+            for c in companys:
+                line = c + "\n"
+                self.file.write(line)
+        return item
+    
+    def open_spider(self,spider):
+        self.file = codecs.open('/tmp/job51.json', 'wb', encoding='utf-8')
+        
+    def close_spider(self, spider):
+        self.file.close()
+        
+    
+class CjolPipeline(object):
+    def process_item(self, item, spider):
+        if item.__class__.__name__=='CjolSearchJsonItem':
+            print('CjolPipeline')
+        return item
+
+    def open_spider(self,spider):
+        self.file = codecs.open('/tmp/cjol.json', 'wb', encoding='utf-8')
+        
+    def close_spider(self, spider):
+        self.file.close()
