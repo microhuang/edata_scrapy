@@ -20,7 +20,10 @@ def url_query_string_update(url,key,value):
 #    else:
 #        pq[key][0] = '2'
         
-    pq[key][0] = value
+    if key not in pq:
+        pq[key] = [value]
+    else:
+        pq[key][0] = value
     up[4] = urlencode(pq, True)
     url = urlunparse(up)
     return url
@@ -308,4 +311,23 @@ class CjolSearchNext(object):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
                 yield req
     
+  
+#https://fe-api.zhaopin.com/c/i/sou?pageSize=60&cityId=489&workExperience=-1&education=-1&companyType=-1&employmentType=-1&jobWelfareTag=-1&kw=%E6%9C%BA%E6%A2%B0%E5%B7%A5%E7%A8%8B%E5%B8%88&kt=3&_v=0.02290825&x-zp-page-request-id=24b0a34d0b2e40a3a3e199b2822e96f5-1542773033547-230569
+#https://fe-api.zhaopin.com/c/i/sou?start=60&pageSize=60&cityId=489&workExperience=-1&education=-1&companyType=-1&employmentType=-1&jobWelfareTag=-1&kw=%E6%9C%BA%E6%A2%B0%E5%B7%A5%E7%A8%8B%E5%B8%88&kt=3&_v=0.02290825&x-zp-page-request-id=24b0a34d0b2e40a3a3e199b2822e96f5-1542773033547-230569
+class ZhaopinSearchJsonNext(object):
+    @staticmethod
+    def extract(response,spider):
+        rows = json.loads(response.body)['data']['results']
+        if rows:
+            next_url = response.url
+            if 'start' not in parse_qs(response.url):
+                start=60
+            else:
+                start=int(parse_qs(response.url)['start'][0])+60
+            next_url = url_query_string_update(next_url, 'start', start)
+            dont_filter = False
+            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+            yield req
+        
+        
     

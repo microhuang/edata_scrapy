@@ -224,7 +224,22 @@ class CjolSearchItem(scrapy.Item):
             
         return item
     
-    
+class ZhaopinSearchJsonItem(scrapy.Item):
+    url = scrapy.Field()
+    companys = scrapy.Field()
+    @staticmethod
+    def extract(response):
+        item = ZhaopinSearchJsonItem()
+        
+        item['url'] = response.url
+        rows = json.loads(response.body)['data']['results']
+        if rows:
+            companys = set()
+            for c in rows:
+                companys.add(c['company']['name'])
+            item['companys'] = json.dumps(list(companys),ensure_ascii=False)
+            
+        return item
     
     
     

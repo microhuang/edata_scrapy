@@ -94,3 +94,23 @@ class CjolPipeline(object):
         
     def close_spider(self, spider):
         self.file.close()
+
+
+class ZhaopinPipeline(object):
+    def process_item(self, item, spider):
+        if item.__class__.__name__=='ZhaopinSearchJsonItem':
+            try:
+                companys = json.loads(item['companys'])
+                for c in companys:
+                    line = c + "\n"
+                    self.file.write(line)
+            except KeyError:
+                print('缺少有效数据！')
+                pass
+        return item
+
+    def open_spider(self,spider):
+        self.file = codecs.open('/tmp/zhaopin.json', 'wb', encoding='utf-8')
+        
+    def close_spider(self, spider):
+        self.file.close()
