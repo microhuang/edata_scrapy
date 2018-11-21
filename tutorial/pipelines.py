@@ -28,16 +28,6 @@ class EdataPipeline(object):
         
     def process_item(self, item, spider):
         #todo:xxxx
-        if item.__class__.__name__=='JobcnSearchJsonItem':
-            companys = json.loads(item['companys'])
-            for c in companys:
-                line = c + "\n"
-                self.file.write(line)
-        if item.__class__.__name__=='Job5156SearchJsonItem' or item.__class__.__name__=='Job5156SearchItem':
-            companys = json.loads(item['companys'])
-            for c in companys:
-                line = c + "\n"
-                self.file.write(line)
         
 #        line = json.dumps(dict(item), ensure_ascii=False, sort_keys=False) + "\n"
 #        self.file.write(line)
@@ -57,6 +47,46 @@ class EdataPipeline(object):
         
     def close_spider(self, spider):
 #        self.exporter.finish_exporting()
+        self.file.close()
+
+
+class Job5156Pipeline(object):
+    def process_item(self, item, spider):
+        if item.__class__.__name__=='Job5156SearchJsonItem' or item.__class__.__name__=='Job5156SearchItem':
+            try:
+                companys = json.loads(item['companys'])
+                for c in companys:
+                    line = c + "\n"
+                    self.file.write(line)
+            except KeyError:
+                print('缺少有效数据！')
+                pass
+        return item
+
+    def open_spider(self,spider):
+        self.file = codecs.open('/tmp/job5156.json', 'wb', encoding='utf-8')
+        
+    def close_spider(self, spider):
+        self.file.close()
+        
+        
+class JobcnPipeline(object):
+    def process_item(self, item, spider):
+        if item.__class__.__name__=='JobcnSearchJsonItem':
+            try:
+                companys = json.loads(item['companys'])
+                for c in companys:
+                    line = c + "\n"
+                    self.file.write(line)
+            except KeyError:
+                print('缺少有效数据！')
+                pass
+        return item
+
+    def open_spider(self,spider):
+        self.file = codecs.open('/tmp/jobcn.json', 'wb', encoding='utf-8')
+        
+    def close_spider(self, spider):
         self.file.close()
 
 

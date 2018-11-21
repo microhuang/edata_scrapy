@@ -102,6 +102,8 @@ ITEM_PIPELINES = {
     'tutorial.pipelines.CjolPipeline': 301,
     'tutorial.pipelines.Job51Pipeline': 302,
     'tutorial.pipelines.ZhaopinPipeline': 303,
+    'tutorial.pipelines.Job5156Pipeline': 304,
+    'tutorial.pipelines.JobcnPipeline': 305,
 }
 
 
