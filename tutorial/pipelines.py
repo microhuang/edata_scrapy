@@ -54,9 +54,13 @@ class Job5156Pipeline(object):
     def process_item(self, item, spider):
         if item.__class__.__name__=='Job5156SearchJsonItem' or item.__class__.__name__=='Job5156SearchItem':
             try:
-                companys = json.loads(item['companys'])
-                for c in companys:
-                    line = c + "\n"
+#                companys = json.loads(item['companys'])
+#                for c in companys:
+#                    line = c + "\n"
+#                    self.file.write(line)
+                positions = json.loads(item['positions'])
+                for p in positions:
+                    line = str(p) + "\n"
                     self.file.write(line)
             except KeyError:
                 print('缺少有效数据！')
@@ -74,9 +78,13 @@ class JobcnPipeline(object):
     def process_item(self, item, spider):
         if item.__class__.__name__=='JobcnSearchJsonItem':
             try:
-                companys = json.loads(item['companys'])
-                for c in companys:
-                    line = c + "\n"
+#                companys = json.loads(item['companys'])
+#                for c in companys:
+#                    line = c + "\n"
+#                    self.file.write(line)
+                positions = json.loads(item['positions'])
+                for p in positions:
+                    line = str(p) + "\n"
                     self.file.write(line)
             except KeyError:
                 print('缺少有效数据！')

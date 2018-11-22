@@ -161,7 +161,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
 #                                                },
 #                                                callback=request.callback,
 #                                                dont_filter=request.dont_filter)
-            request = eval(spider.request_res_route[spider.request_res_route_key]['Next']+'Next').login(request, response, spider)
+            request = eval(spider.request_res_route[spider.request_res_route_key]['next']+'Next').login(request, response, spider)
             # 使用后释放标记，防止污染
             spider.request_res_route_key = None
             return request

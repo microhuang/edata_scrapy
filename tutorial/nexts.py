@@ -148,7 +148,9 @@ class GithubLoginNext(object):
                                             dont_filter=request.dont_filter)
         return request
     
+    
 #https://www.jobcn.com/search/result_servlet.ujson?
+#https://www.jobcn.com/search/result_servlet.ujson?s=search%2Ftop&p.querySwitch=0&p.searchSource=default&p.keyword=%E6%9C%BA%E6%A2%B0%E5%B7%A5%E7%A8%8B%E5%B8%88%3B+%E7%BB%93%E6%9E%84%E5%B7%A5%E7%A8%8B%E5%B8%88%3B+%E8%AE%BE%E8%AE%A1%E5%B7%A5%E7%A8%8B%E5%B8%88%3B+%E9%A1%B9%E7%9B%AE%E7%BB%8F%E7%90%86&p.keyword2=&p.keywordType=2&p.pageNo=1&p.pageSize=40&p.sortBy=postdate&p.statistics=false&p.totalRow=1000&p.jobnature=15&p.comProperity=0&p.JobLocationTown=&p.salary=-1&p.highSalary=100000&p.salarySearchType=1&p.includeNeg=1&p.inputSalary=-1&p.workYear1=-1&p.workYear2=11&p.degreeId1=10&p.degreeId2=70&p.posPostDate=366&p.otherFlag=3
 class JobcnSearchJsonNext(object):
     @staticmethod
     def extract(response,spider):
@@ -189,6 +191,8 @@ class JobcnSearchJsonNext(object):
             req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
             yield req
         
+#Deprecated
+#https://www.jobcn.com/search/result.xhtml?s=search%2Ftop&p.includeNeg=1&p.sortBy=postdate&p.jobLocationId=&p.jobLocationTown=&p.jobLocationTownId=&p.querySwitch=0&p.keyword=%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6%3B+%BD%E1%B9%B9%B9%A4%B3%CC%CA%A6%3B+%C9%E8%BC%C6%B9%A4%B3%CC%CA%A6%3B+%CF%EE%C4%BF%BE%AD%C0%ED&p.keywordType=2&p.workLocation=
 class JobcnSearchNext(object):
     @staticmethod
     def extract(response,spider):
@@ -243,7 +247,7 @@ class JobcnSearchNext(object):
 #        yield req
     
 
-    
+#Deprecated
 #http://www.job5156.com/s/result/kt0_kw-
 class Job5156SearchNext(object):
     @staticmethod
@@ -269,6 +273,10 @@ class Job5156SearchNext(object):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
                 yield req
             
+#http://www.job5156.com/s/result/ajax.json?keyword=机械工程师&keywordType=0&posTypeList=&locationList=&taoLabelList=&degreeFrom=&propertyList=&industryList=&sortBy=0&urgentFlag=&maxSalary=&salary=&workyearFrom=&workyearTo=&degreeTo=&pageNo=1
+#http://www.job5156.com/s/result/ajax.json?keyword=结构工程师&keywordType=0&posTypeList=&locationList=&taoLabelList=&degreeFrom=&propertyList=&industryList=&sortBy=0&urgentFlag=&maxSalary=&salary=&workyearFrom=&workyearTo=&degreeTo=&pageNo=1
+#http://www.job5156.com/s/result/ajax.json?keyword=设计工程师&keywordType=0&posTypeList=&locationList=&taoLabelList=&degreeFrom=&propertyList=&industryList=&sortBy=0&urgentFlag=&maxSalary=&salary=&workyearFrom=&workyearTo=&degreeTo=&pageNo=1
+#http://www.job5156.com/s/result/ajax.json?keyword=项目经理&keywordType=0&posTypeList=&locationList=&taoLabelList=&degreeFrom=&propertyList=&industryList=&sortBy=0&urgentFlag=&maxSalary=&salary=&workyearFrom=&workyearTo=&degreeTo=&pageNo=1
 class Job5156SearchMoreNext(object):
     @staticmethod
     def extract(response,spider):
@@ -279,6 +287,7 @@ class Job5156SearchMoreNext(object):
             next_url = url_query_string_update(next_url, 'pageNo', int(parse_qs(response.url)['pageNo'][0])+1)
             req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
             yield req
+    
     
 #https://search.51job.com/list/000000,000000,0000,00,9,99,%25E6%259C%25BA%25E6%25A2%25B0%25E5%25B7%25A5%25E7%25A8%258B%25E5%25B8%2588,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
 #https://search.51job.com/list/080200,000000,0000,00,9,99,%25E6%259C%25BA%25E6%25A2%25B0%25E5%25B7%25A5%25E7%25A8%258B%25E5%25B8%2588,2,3.html?lang=c&stype=1&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=

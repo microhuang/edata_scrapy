@@ -7,6 +7,7 @@
 
 import scrapy
 import json
+import re
 from scrapy import Selector
 
 
@@ -104,6 +105,7 @@ class GithubProfileItem(scrapy.Item):
 class JobcnSearchJsonItem(scrapy.Item):
     url = scrapy.Field()
     companys = scrapy.Field()
+    positions = scrapy.Field()
     
     @staticmethod
     def extract(response):
@@ -121,11 +123,15 @@ class JobcnSearchJsonItem(scrapy.Item):
         
         rows = json.loads(response_body)['rows']
         companys = set()
+        positions = []
         if len(rows)>0:
             for row in rows:
-                companys.add(row['comName'])
+                if re.search(r'\bsolidwork|solidworks|sw\b',row['posDescription']):
+                    companys.add(row['comName'])
+                    positions.append({'company':row['comName'], 'position':row['posDescription']})
         item['url'] = response.url
         item['companys'] = json.dumps(list(companys),ensure_ascii=False)
+        item['positions'] = json.dumps(list(positions),ensure_ascii=False)
             
         return item
     
@@ -169,6 +175,7 @@ class Job5156SearchItem(scrapy.Item):
 class Job5156SearchJsonItem(scrapy.Item):
     url = scrapy.Field()
     companys = scrapy.Field()
+    positions = scrapy.Field()
     
     @staticmethod
     def extract(response):
@@ -178,9 +185,13 @@ class Job5156SearchJsonItem(scrapy.Item):
         rows = json.loads(response.body)['page']['items']
         if rows:
             companys = set()
-            for r in rows:
-                companys.add(r['comName'])
+            positions = []
+            for row in rows:
+                if re.search(r'\bsolidwork|solidworks|sw\b',row['posDesc']):
+                    companys.add(row['comName'])
+                    positions.append({'company':row['comName'], 'position':row['posDesc']})
             item['companys'] = json.dumps(list(companys),ensure_ascii=False)
+            item['positions'] = json.dumps(list(positions),ensure_ascii=False)
         
         return item
     
