@@ -165,6 +165,8 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             # 使用后释放标记，防止污染
             spider.request_res_route_key = None
             return request
+        # 使用后释放标记，防止污染
+#        spider.request_res_route_key = None
         return response
         
     def process_request(self, request, spider):
@@ -176,11 +178,17 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         if spider.request_res_route:
             for k in spider.request_res_route:
                 if k==request.url or 'type' in spider.request_res_route[k] and spider.request_res_route[k]['type']=='starts' and request.url.startswith(k) or isinstance(k, re.Pattern) and re.match(k,request.url):
-                    spider.logger.info('request_res_route_key: %s => %s' % (k, spider.request_res_route[k]))
+                    spider.logger.info('request_res_route_key: %s => %s => %s' % (k, spider.request_res_route[k], request.url))
                     spider.request_res_route_key = k
+#                    spider.request_res_route_url = request.url
+                    request.meta['request_res_route_key'] = k
                     break
-            else:
-                spider.request_res_route_key = None
+#            else:
+#                spider.request_res_route_key = None
+##                spider.request_res_route_url = None
+#        else:
+#            spider.request_res_route_key = None
+##            spider.request_res_route_url = None
 
         # UA
         if spider.request_res_route_key and spider.request_res_route and 'UA' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UA']:

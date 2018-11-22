@@ -19,6 +19,8 @@ import re
 
 import json
 
+import sys
+
 from tutorial.items import *
 from tutorial.nexts import *
 
@@ -189,7 +191,10 @@ class EdataSpider(RedisSpider):
 
         try:
             #从Middleware定位request资源路由
-            url = eval(self.request_res_route[self.request_res_route_key]['next']+'Next').extract(response,self)
+#            url = eval(self.request_res_route[self.request_res_route_key]['next']+'Next').extract(response,self)
+#            url = globals()[self.request_res_route[self.request_res_route_key]['next']+'Next'].extract(response,self)
+#            url = getattr(sys.modules[__name__], self.request_res_route[self.request_res_route_key]['next']+'Next').extract(response,self)
+            url = getattr(sys.modules[__name__], self.request_res_route[response.meta["request_res_route_key"]]['next']+'Next').extract(response,self)
             if url:
                 for r in url:
                     yield r
@@ -220,7 +225,9 @@ class EdataSpider(RedisSpider):
             for k in self.item_res_route:
                 if k==response.url or 'type' in self.item_res_route[k] and self.item_res_route[k]['type']=='starts' and response.url.startswith(k) or 'type' in self.item_res_route[k] and self.item_res_route[k]['type']=='search' and re.match(k, response.url) or  isinstance(k, re.Pattern) and re.match(k,response.url):
                     self.logger.info('item_res_route_key: %s' % k)
-                    item = eval(self.item_res_route[k]['item']+'Item').extract(response)
+#                    item = eval(self.item_res_route[k]['item']+'Item').extract(response)
+#                    item = globals()[self.item_res_route[k]['item']+'Item'].extract(response)
+                    item = getattr(sys.modules[__name__], self.item_res_route[k]['item']+'Item').extract(response)
                     self.item_res_route_key = k
                     break
         except KeyError:
