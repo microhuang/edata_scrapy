@@ -218,7 +218,7 @@ class EdataSpider(RedisSpider):
         
         try:
             for k in self.item_res_route:
-                if k==response.url or 'type' in self.item_res_route[k] and self.item_res_route[k]['type']=='starts' and response.url.startswith(k) or isinstance(k, re.Pattern) and re.match(k,response.url):
+                if k==response.url or 'type' in self.item_res_route[k] and self.item_res_route[k]['type']=='starts' and response.url.startswith(k) or 'type' in self.item_res_route[k] and self.item_res_route[k]['type']=='search' and re.match(k, response.url) or  isinstance(k, re.Pattern) and re.match(k,response.url):
                     self.logger.info('item_res_route_key: %s' % k)
                     item = eval(self.item_res_route[k]['item']+'Item').extract(response)
                     self.item_res_route_key = k

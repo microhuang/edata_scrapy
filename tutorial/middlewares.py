@@ -179,6 +179,8 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
                     spider.logger.info('request_res_route_key: %s => %s' % (k, spider.request_res_route[k]))
                     spider.request_res_route_key = k
                     break
+            else:
+                spider.request_res_route_key = None
 
         # UA
         if spider.request_res_route_key and spider.request_res_route and 'UA' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['UA']:

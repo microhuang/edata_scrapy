@@ -182,16 +182,18 @@ class Job5156SearchJsonItem(scrapy.Item):
         item = Job5156SearchJsonItem()
         item['url'] = response.url
         
-        rows = json.loads(response.body)['page']['items']
-        if rows:
-            companys = set()
-            positions = []
-            for row in rows:
-                if re.search(r'\bsolidwork|solidworks|sw\b',row['posDesc']):
-                    companys.add(row['comName'])
-                    positions.append({'company':row['comName'], 'position':row['posDesc']})
-            item['companys'] = json.dumps(list(companys),ensure_ascii=False)
-            item['positions'] = json.dumps(list(positions),ensure_ascii=False)
+        if json.loads(response.body)['page']:
+            
+            rows = json.loads(response.body)['page']['items']
+            if rows:
+                companys = set()
+                positions = []
+                for row in rows:
+                    if re.search(r'\bsolidwork|solidworks|sw\b',row['posDesc']):
+                        companys.add(row['comName'])
+                        positions.append({'company':row['comName'], 'position':row['posDesc']})
+                item['companys'] = json.dumps(list(companys),ensure_ascii=False)
+                item['positions'] = json.dumps(list(positions),ensure_ascii=False)
         
         return item
     
@@ -250,6 +252,25 @@ class ZhaopinSearchJsonItem(scrapy.Item):
                 companys.add(c['company']['name'])
             item['companys'] = json.dumps(list(companys),ensure_ascii=False)
             
+        return item
+    
+#company从列表页带入
+class ZhaopinPositionItem(scrapy.Item):
+    url = scrapy.Field()
+    company = scrapy.Field()
+    position = scrapy.Field()
+    @staticmethod
+    def extract(response):
+        item = ZhaopinPositionItem()
+        selector = response.xpath("/html/body/div[1]/div[3]/div[5]/div[1]")
+        position = selector.extract()[0]
+        if re.search(r'\bsolidwork|solidworks|sw\b',position):
+            #来自列表页
+            company = response.meta['company']
+            position = selector.extract()[0]
+            item['company'] = company
+            item['position'] = position
+        
         return item
     
     

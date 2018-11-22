@@ -62,6 +62,7 @@ class Job5156Pipeline(object):
                 for p in positions:
                     line = str(p) + "\n"
                     self.file.write(line)
+                    self.file.flush()
             except KeyError:
                 print('缺少有效数据！')
                 pass
@@ -86,6 +87,7 @@ class JobcnPipeline(object):
                 for p in positions:
                     line = str(p) + "\n"
                     self.file.write(line)
+                    self.file.flush()
             except KeyError:
                 print('缺少有效数据！')
                 pass
@@ -136,15 +138,19 @@ class CjolPipeline(object):
 
 class ZhaopinPipeline(object):
     def process_item(self, item, spider):
-        if item.__class__.__name__=='ZhaopinSearchJsonItem':
-            try:
-                companys = json.loads(item['companys'])
-                for c in companys:
-                    line = c + "\n"
-                    self.file.write(line)
-            except KeyError:
-                print('缺少有效数据！')
-                pass
+#        if item.__class__.__name__=='ZhaopinSearchJsonItem':
+#            try:
+#                companys = json.loads(item['companys'])
+#                for c in companys:
+#                    line = c + "\n"
+#                    self.file.write(line)
+#            except KeyError:
+#                print('缺少有效数据！')
+#                pass
+        if item.__class__.__name__=='ZhaopinPositionItem':
+            line = str(item) + "\n"
+            self.file.write(line)
+            self.file.flush()
         return item
 
     def open_spider(self,spider):

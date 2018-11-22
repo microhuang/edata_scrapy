@@ -280,13 +280,14 @@ class Job5156SearchNext(object):
 class Job5156SearchMoreNext(object):
     @staticmethod
     def extract(response,spider):
-        rows = json.loads(response.body)['page']['items']
-        if rows:
-            dont_filter = False
-            next_url = response.url
-            next_url = url_query_string_update(next_url, 'pageNo', int(parse_qs(response.url)['pageNo'][0])+1)
-            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
-            yield req
+        if json.loads(response.body)['page']:
+            rows = json.loads(response.body)['page']['items']
+            if rows:
+                dont_filter = False
+                next_url = response.url
+                next_url = url_query_string_update(next_url, 'pageNo', int(parse_qs(response.url)['pageNo'][0])+1)
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+                yield req
     
     
 #https://search.51job.com/list/000000,000000,0000,00,9,99,%25E6%259C%25BA%25E6%25A2%25B0%25E5%25B7%25A5%25E7%25A8%258B%25E5%25B8%2588,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
@@ -328,6 +329,14 @@ class ZhaopinSearchJsonNext(object):
     def extract(response,spider):
         rows = json.loads(response.body)['data']['results']
         if rows:
+            #详页
+            for row in rows:
+                dont_filter = False
+                next_url = row['positionURL']
+                meta = {"company": row['company']['name']}
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta=meta)
+                yield req
+            #翻页
             next_url = response.url
             if 'start' not in parse_qs(response.url):
                 start=60
@@ -338,5 +347,5 @@ class ZhaopinSearchJsonNext(object):
             req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
             yield req
         
-        
+
     
