@@ -109,7 +109,7 @@ ITEM_PIPELINES = {
 
 DOWNLOADER_MIDDLEWARES = {
     #'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware' : None,  
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware' : None,
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware' : 1,
     'tutorial.middlewares.EdataDownloaderMiddleware': 543,
 }
 
@@ -121,6 +121,6 @@ USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.
 EDATA_URL_ROUTE_DB_URI = "mysql+mysqlconnector://root:12345678@localhost/scrapy_db"
 
 CONCURRENT_REQUESTS_PER_IP = 1
-DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 5
 
 

@@ -178,9 +178,9 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         if spider.request_res_route:
             for k in spider.request_res_route:
                 if k==request.url or 'type' in spider.request_res_route[k] and spider.request_res_route[k]['type']=='starts' and request.url.startswith(k) or isinstance(k, re.Pattern) and re.match(k,request.url):
-                    spider.logger.info('request_res_route_key: %s => %s => %s' % (k, spider.request_res_route[k], request.url))
-                    spider.request_res_route_key = k
-#                    spider.request_res_route_url = request.url
+                    spider.logger.info('request_res_route_key: %s | %s => %s => %s' % (k, spider.request_res_route_key, spider.request_res_route[k], request.url))
+                    spider.request_res_route_key = k #注意： spider成员存在线程安全！
+#                    spider.request_res_route_url = request.url #注意： spider成员存在线程安全！
                     request.meta['request_res_route_key'] = k
                     break
 #            else:

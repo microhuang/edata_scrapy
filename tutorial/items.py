@@ -215,6 +215,7 @@ class Job51SearchItem(scrapy.Item):
             
         return item
 
+#Deprecated
 class CjolSearchItem(scrapy.Item):
     url = scrapy.Field()
     companys = scrapy.Field()
@@ -235,6 +236,24 @@ class CjolSearchItem(scrapy.Item):
                     companys.add(s)
                 item['companys'] = json.dumps(list(companys),ensure_ascii=False)
             
+        return item
+    
+class CjolPositionItem(scrapy.Item):
+    url = scrapy.Field()
+    company = scrapy.Field()
+    position = scrapy.Field()
+    @staticmethod
+    def extract(response):
+        item = CjolPositionItem()
+        selector = response.xpath("/html/body/div[4]/div[1]/div")
+        if selector:
+            position = selector.xpath("div[3]/div[2]").extract()[0]
+            if re.search(r'\bsolidwork|solidworks|sw\b',position):
+                company = selector.xpath("div[1]/div/div[1]/div[1]/div[2]/a/text()").extract()[0]
+                item['company'] = company
+                item['position'] = position
+#                print(66666, position)
+#            print(7777, position)
         return item
     
 class ZhaopinSearchJsonItem(scrapy.Item):

@@ -74,6 +74,10 @@ class Job5156Pipeline(object):
     def close_spider(self, spider):
         self.file.close()
         
+#    @classmethod
+#    def from_settings(cls, settings):
+#        cls.save_path = '/tmp/'
+#        return cls
         
 class JobcnPipeline(object):
     def process_item(self, item, spider):

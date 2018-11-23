@@ -3,17 +3,17 @@
 
 #import scrapy
 
-from scrapy.http import Request
-
 from scrapy_redis.spiders import RedisSpider
+
+from scrapy.http import Request
 
 from scrapy_redis.utils import bytes_to_str
 
 #from scrapy.utils.misc import load_object
 
-from scrapy import signals
 #from scrapy.xlib.pydispatch import dispatcher
 from pydispatch import dispatcher
+from scrapy import signals
 
 import re
 
@@ -75,6 +75,7 @@ class EdataSpider(RedisSpider):
     #处理request_res_route、item_res_route
     #可重载，以便从其他配置源获取数据
     def setup(self, crawler=None):
+#        self.logger.info('请覆盖EdataSpider.setup，以提供自己的路由配置源！')
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
         from collections import namedtuple
@@ -122,6 +123,8 @@ class EdataSpider(RedisSpider):
             else: # -O
                 result = session.execute('select * from conf_item')
             res = result.fetchall()
+            if len(res)>99999:
+                self.logger.info('item_res_route过多，可能影响性能，请适度优化！')
             for i in res:
                 if i['type']=="match":
                     self.item_res_route[i['route']] = dict(i)
@@ -137,6 +140,8 @@ class EdataSpider(RedisSpider):
             else: # -O
                 result = session.execute('select * from conf_request')
             res = result.fetchall()
+            if len(res)>99999:
+                self.logger.info('item_res_route过多，可能影响性能，请适度优化！')
             for i in res:
                 if i['type']=="match":
                     self.request_res_route[i['route']] = dict(i)
@@ -149,10 +154,13 @@ class EdataSpider(RedisSpider):
             session.close()
         pass
 
-    #假设start队列带有meta数据
+    #start队列支持的格式
+    #1、{'url':'xxxxx','meta':{}}，其中meta通过response.meta字典访问
+    #2、url
     def make_request_from_data(self, data):
         url = bytes_to_str(data, self.redis_encoding)
         meta = None
+        #假设start队列带有meta数据
         try:
             #{'url':'xxxxx','meta':{}}
             jurl = json.loads(url)
@@ -160,6 +168,7 @@ class EdataSpider(RedisSpider):
             meta = jurl['meta']
             #meta = {'task':123456}
         except:
+            #url
             pass
         
         return Request(url, dont_filter=True, meta=meta)
@@ -228,7 +237,7 @@ class EdataSpider(RedisSpider):
 #                    item = eval(self.item_res_route[k]['item']+'Item').extract(response)
 #                    item = globals()[self.item_res_route[k]['item']+'Item'].extract(response)
                     item = getattr(sys.modules[__name__], self.item_res_route[k]['item']+'Item').extract(response)
-                    self.item_res_route_key = k
+                    self.item_res_route_key = k #todo: Deprecated
                     break
         except KeyError:
             pass
