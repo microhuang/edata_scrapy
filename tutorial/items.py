@@ -197,6 +197,7 @@ class Job5156SearchJsonItem(scrapy.Item):
         
         return item
     
+#Deprecated
 class Job51SearchItem(scrapy.Item):
     url = scrapy.Field()
     companys = scrapy.Field()
@@ -213,6 +214,22 @@ class Job51SearchItem(scrapy.Item):
                 companys.add(s)
             item['companys'] = json.dumps(list(companys),ensure_ascii=False)
             
+        return item
+          
+class Job51PositionItem(scrapy.Item):
+    url = scrapy.Field()
+    company = scrapy.Field()
+    position = scrapy.Field()
+    @staticmethod
+    def extract(response):
+        item = Job51PositionItem()
+        selector = response.xpath('/html/body/div[3]/div[2]')
+        if selector:
+            position = selector.xpath("div[3]/div[1]/div").extract()[0]
+            if re.search(r'\bsolidwork|solidworks|sw\b',position):
+                company = selector.xpath("div[2]/div/div[1]/p[1]/a[1]/text()").extract()[0]
+                item['company'] = company
+                item['position'] = position
         return item
 
 #Deprecated
@@ -286,7 +303,6 @@ class ZhaopinPositionItem(scrapy.Item):
         if re.search(r'\bsolidwork|solidworks|sw\b',position):
             #来自列表页
             company = response.meta['company']
-            position = selector.extract()[0]
             item['company'] = company
             item['position'] = position
         

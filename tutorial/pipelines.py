@@ -5,6 +5,8 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+#from twisted.enterprise import adbapi #提供异步数据库访问
+
 
 import json
 
@@ -106,11 +108,15 @@ class JobcnPipeline(object):
 
 class Job51Pipeline(object):
     def process_item(self, item, spider):
-        if item.__class__.__name__=='Job51SearchItem':
-            companys = json.loads(item['companys'])
-            for c in companys:
-                line = c + "\n"
-                self.file.write(line)
+#        if item.__class__.__name__=='Job51SearchItem':
+#            companys = json.loads(item['companys'])
+#            for c in companys:
+#                line = c + "\n"
+#                self.file.write(line)
+        if item.__class__.__name__=='Job51PositionItem':
+            line = str(item) + "\n"
+            self.file.write(line)
+            self.file.flush()
         return item
     
     def open_spider(self,spider):
@@ -122,15 +128,19 @@ class Job51Pipeline(object):
     
 class CjolPipeline(object):
     def process_item(self, item, spider):
-        if item.__class__.__name__=='CjolSearchItem':
-            try:
-                companys = json.loads(item['companys'])
-                for c in companys:
-                    line = c + "\n"
-                    self.file.write(line)
-            except KeyError:
-                print('缺少有效数据！')
-                pass
+#        if item.__class__.__name__=='CjolSearchItem':
+#            try:
+#                companys = json.loads(item['companys'])
+#                for c in companys:
+#                    line = c + "\n"
+#                    self.file.write(line)
+#            except KeyError:
+#                print('缺少有效数据！')
+#                pass
+        if item.__class__.__name__=='CjolPositionItem':
+            line = str(item) + "\n"
+            self.file.write(line)
+            self.file.flush()
         return item
 
     def open_spider(self,spider):
