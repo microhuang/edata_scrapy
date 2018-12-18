@@ -9,6 +9,8 @@ from scrapy import signals
 
 #from scrapy.http import FormRequest
 
+from scrapy.mail import MailSender
+
 import re
 
 from tutorial.nexts import *
@@ -72,6 +74,8 @@ class TutorialDownloaderMiddleware(object):
         # This method is used by Scrapy to create your spiders.
         s = cls()
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+#        mailer = MailSender.from_settings(settings)
+#        mailer.send(to=["someone@example.com"], subject="Some subject", body="Some body", cc=["another@example.com"])
         return s
 
     def process_request(self, request, spider):
@@ -123,6 +127,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         #cls.crawler = crawler
         #s = cls(timeout=1, service_args=3)
         s = cls()
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
     
     #def __init__(self, timeout=None, service_args=[]):
@@ -145,7 +150,33 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         if self.browser:
             self.browser.close()
             
+    def spider_opened(self, spider):
+        spider.logger.info('%s opened' % spider.name)
+            
+    def process_exception(self, request, exception, spider):
+        #计数
+        if 'task_id' in request.meta:
+            spider.crawler.stats.inc_value(request.meta['task_id'], -(request.meta.get('retry_times', 0)+1))
+#            #todo:xxxx
+##            print(99999, spider.crawler.stats.get_value(request.meta['task_id']))
+#            #任务完成？
+#            if spider.crawler.stats.get_value(request.meta['task_id'])==0:
+##                mailer = MailSender.from_settings(settings)
+##                mailer.send(to=["someone@example.com"], subject="Some subject", body="Some body", cc=["another@example.com"])
+#                pass
+            
     def process_response(self, request, response, spider):
+        #计数
+        if 'task_id' in request.meta:
+            spider.crawler.stats.inc_value(request.meta['task_id'], -1)
+#            #todo:xxxx
+#            print(88888, spider.crawler.stats.get_value(request.meta['task_id']))
+#            #任务完成？
+#            if spider.crawler.stats.get_value(request.meta['task_id'])==0:
+##                mailer = MailSender.from_settings(settings)
+##                mailer.send(to=["someone@example.com"], subject="Some subject", body="Some body", cc=["another@example.com"])
+#                pass
+            
         # todo:获取登陆账号
         if spider.request_res_route_key and 'LoginUser' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['LoginUser']:
             spider.logger.info('edata logining ... %s ' % response.url)
@@ -170,9 +201,23 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         return response
         
     def process_request(self, request, spider):
+#        print(55555, request.headers)
+#        from scrapy.exceptions import CloseSpider
+#        raise CloseSpider('任务结束，重启Sprider！')
         #help(self.crawler.engine.downloader)
         #ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15'
         #request.headers.setdefault('User-Agent', ua)
+        
+        #task_id
+        if 'task_id' not in request.meta:
+            from uuid import uuid4
+            task_id = uuid4().hex
+            spider.logger.warn('缺少task_id！ 由框架生成： %s' % task_id)
+            request.meta['task_id'] = task_id
+        
+        #计数
+#        print(777777, spider.crawler.stats.get_value(request.meta['task_id']))
+        spider.crawler.stats.inc_value(request.meta['task_id'], 1)
 
         # request_res_route
         if spider.request_res_route:

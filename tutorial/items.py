@@ -8,9 +8,28 @@
 import scrapy
 import json
 import re
+import sys
+from urllib.parse import urlparse,parse_qs,urlunparse,urlencode,unquote,quote
+from abc import ABCMeta, abstractmethod,abstractproperty
+if sys.version_info > (3, 0):
+    from abc import abstractstaticmethod
+import six
 from scrapy import Selector
 
 
+@six.add_metaclass(ABCMeta)
+class EdataItem(scrapy.Item):
+    #为了保证pipeline获得任务信息，请确保task_id有效
+    task_id = scrapy.Field()
+    
+#    @abstractstaticmethod
+    @staticmethod
+    def extract(response):
+#        item = EdataItem()
+#        item['task_id'] = response.meta['task_id']
+        pass
+
+    
 class TutorialItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
@@ -102,7 +121,7 @@ class GithubProfileItem(scrapy.Item):
         item['title'] = response.xpath('//title/text()').extract()
         return item
     
-class JobcnSearchJsonItem(scrapy.Item):
+class JobcnSearchJsonItem(EdataItem):
     url = scrapy.Field()
     companys = scrapy.Field()
     positions = scrapy.Field()
@@ -135,7 +154,7 @@ class JobcnSearchJsonItem(scrapy.Item):
             
         return item
     
-class JobcnPositionDetailItem(scrapy.Item):
+class JobcnPositionDetailItem(EdataItem):
     company = scrapy.Field()
     
     @staticmethod
@@ -155,7 +174,7 @@ class JobcnPositionDetailItem(scrapy.Item):
         item['company'] = response.xpath('//*[@id="menuHeader"]/div[1]/div[2]/h2/text()').extract()[0]
         return item
     
-class Job5156SearchItem(scrapy.Item):
+class Job5156SearchItem(EdataItem):
     url = scrapy.Field()
     companys = scrapy.Field()
     
@@ -172,7 +191,7 @@ class Job5156SearchItem(scrapy.Item):
             item['companys'] = json.dumps(list(companys),ensure_ascii=False)
         return item
     
-class Job5156SearchJsonItem(scrapy.Item):
+class Job5156SearchJsonItem(EdataItem):
     url = scrapy.Field()
     companys = scrapy.Field()
     positions = scrapy.Field()
@@ -198,7 +217,7 @@ class Job5156SearchJsonItem(scrapy.Item):
         return item
     
 #Deprecated
-class Job51SearchItem(scrapy.Item):
+class Job51SearchItem(EdataItem):
     url = scrapy.Field()
     companys = scrapy.Field()
     
@@ -216,7 +235,7 @@ class Job51SearchItem(scrapy.Item):
             
         return item
           
-class Job51PositionItem(scrapy.Item):
+class Job51PositionItem(EdataItem):
     url = scrapy.Field()
     company = scrapy.Field()
     position = scrapy.Field()
@@ -233,7 +252,7 @@ class Job51PositionItem(scrapy.Item):
         return item
 
 #Deprecated
-class CjolSearchItem(scrapy.Item):
+class CjolSearchItem(EdataItem):
     url = scrapy.Field()
     companys = scrapy.Field()
     
@@ -255,7 +274,7 @@ class CjolSearchItem(scrapy.Item):
             
         return item
     
-class CjolPositionItem(scrapy.Item):
+class CjolPositionItem(EdataItem):
     url = scrapy.Field()
     company = scrapy.Field()
     position = scrapy.Field()
@@ -273,7 +292,7 @@ class CjolPositionItem(scrapy.Item):
 #            print(7777, position)
         return item
     
-class ZhaopinSearchJsonItem(scrapy.Item):
+class ZhaopinSearchJsonItem(EdataItem):
     url = scrapy.Field()
     companys = scrapy.Field()
     @staticmethod
@@ -291,7 +310,7 @@ class ZhaopinSearchJsonItem(scrapy.Item):
         return item
     
 #company从列表页带入
-class ZhaopinPositionItem(scrapy.Item):
+class ZhaopinPositionItem(EdataItem):
     url = scrapy.Field()
     company = scrapy.Field()
     position = scrapy.Field()
@@ -307,6 +326,64 @@ class ZhaopinPositionItem(scrapy.Item):
             item['position'] = position
         
         return item
+    
+#版面识别
+class SinaItem(EdataItem):
+    url = scrapy.Field()
+    a_urls_json = scrapy.Field()
+    @staticmethod
+    def extract(response):
+        item['url'] = response.url
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        next_urls = re.finditer(r'<a .*?href="(.*?)".*?>(.*?)</a>', response_body)
+        for url in next_urls:
+            next_url = url.group(1)
+            next_a = url.group(2)
+        
+   
+#简历页面
+class JobcnHireViewItem(EdataItem):
+    url = scrapy.Field()
+    html_all = scrapy.Field()
+#    html_base = scrapy.Field()
+#    html_desc = scrapy.Field()
+    @staticmethod
+    def extract(response):
+        item = JobcnHireViewItem()
+        item['url'] = response.url
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        try:
+            k = parse_qs(urlparse(response.url)[4])['ref'][0]
+            html_all = response.xpath('//*[@id="%s"]/tbody/tr/td/table' % k).extract()
+#            html_base = response.xpath('//*[@id="%s"]/tbody/tr/td/table/tbody/tr[2]/td/div/table' % k).extract()
+#            html_desc = response.xpath('//*[@id="%s"]/tbody/tr/td/table/tbody/tr[4]/td/table[2]' % k).extract()
+            item['html_all'] = html_all
+#            item['html_base'] = html_base
+#            item['html_desc'] = html_desc
+#            print(8888, html_base, html_desc)
+        except Exception as e:
+            print('提取错误', e)
+            pass
+        return item
+    
+    
+    
     
     
     

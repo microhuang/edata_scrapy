@@ -2,14 +2,21 @@
 
 
 from scrapy.http import Request,FormRequest
+from scrapy.http.cookies import CookieJar
 
-import re, time
+import re
+import time
+import random
 
-from urllib.parse import urlparse,parse_qs,urlunparse,urlencode,quote,unquote
+from urllib.parse import urlparse,parse_qs,urlunparse,urlencode,unquote,quote
 
 import json
 
+import hashlib
+
 from scrapy import Selector
+
+from deprecated import deprecated as Deprecated
 
 def url_query_string_update(url,key,value):
     up = list(urlparse(url))
@@ -75,7 +82,7 @@ class BaiduListNext(object):
             domain='https://www.baidu.com'
         #todo
         #next_urls = re.findall(r'<a .*?href="(.*?)"',str(response.body, encoding='utf-8'))
-        rsp = ''
+        response_body = ''
         try:
             response_body = str(response.body, encoding='utf-8')
         except:
@@ -110,7 +117,7 @@ class BaiduListNext(object):
                 #or todo: api
                 pass
 
-            #这是一个demo，进入结果页，只对当前页面“百度搜索结果”中的link?链接进行深入爬取
+            #这是一个demo，进入结果页，只对当�页面“百度搜索结果”中的link?链接进行深入爬取
             if next_url.startswith('http://www.baidu.com/link?url='):
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
                 #req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta=response.meta)
@@ -191,7 +198,7 @@ class JobcnSearchJsonNext(object):
             req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
             yield req
         
-#Deprecated
+@Deprecated
 #https://www.jobcn.com/search/result.xhtml?s=search%2Ftop&p.includeNeg=1&p.sortBy=postdate&p.jobLocationId=&p.jobLocationTown=&p.jobLocationTownId=&p.querySwitch=0&p.keyword=%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6%3B+%BD%E1%B9%B9%B9%A4%B3%CC%CA%A6%3B+%C9%E8%BC%C6%B9%A4%B3%CC%CA%A6%3B+%CF%EE%C4%BF%BE%AD%C0%ED&p.keywordType=2&p.workLocation=
 class JobcnSearchNext(object):
     @staticmethod
@@ -247,7 +254,7 @@ class JobcnSearchNext(object):
 #        yield req
     
 
-#Deprecated
+@Deprecated
 #http://www.job5156.com/s/result/kt0_kw-
 class Job5156SearchNext(object):
     @staticmethod
@@ -290,11 +297,11 @@ class Job5156SearchMoreNext(object):
                 yield req
     
     
-#https://search.51job.com/list/000000,000000,0000,00,9,99,机械工程师&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
-#https://search.51job.com/list/000000,000000,0000,00,9,99,结构工程师&&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
-#https://search.51job.com/list/000000,000000,0000,00,9,99,设计工程师&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
-#https://search.51job.com/list/000000,000000,0000,00,9,99,项目经理&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
-#https://search.51job.com/list/080200,000000,0000,00,9,99,%25E6%259C%25BA%25E6%25A2%25B0%25E5%25B7%25A5%25E7%25A8%258B%25E5%25B8%2588,2,3.html?lang=c&stype=1&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+#https://search.51job.com/list/030000,000000,0000,00,9,99,机械工程师&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+#https://search.51job.com/list/030000,000000,0000,00,9,99,结构工程师&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+#https://search.51job.com/list/030000,000000,0000,00,9,99,设计工程师&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+#https://search.51job.com/list/030000,000000,0000,00,9,99,项目经理&,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
+#https://search.51job.com/list/000000,000000,0000,00,9,99,%25E6%259C%25BA%25E6%25A2%25B0%25E5%25B7%25A5%25E7%25A8%258B%25E5%25B8%2588,2,3.html?lang=c&stype=1&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=
 class Job51SearchNext(object):
     @staticmethod
     def extract(response,spider):
@@ -304,14 +311,14 @@ class Job51SearchNext(object):
             for l in urls:
                 next_url = l
                 dont_filter = False
-                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta=response.meta)
                 yield req
             #翻页
             page = re.match(r'(?P<b>.*,)(?P<pageNo>[\d]+)(?P<e>.html\?.*)', response.url).group("pageNo")
             page = str(int(page)+1)
             next_url = re.sub(r'(?P<b>.*,)(?P<pageNo>[\d]+)(?P<e>.html\?.*)', '\g<b>'+page+'\g<e>', response.url)
             dont_filter = False
-            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
+            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta=response.meta)
             yield req
     
     
@@ -349,11 +356,15 @@ class ZhaopinSearchJsonNext(object):
     def extract(response,spider):
         rows = json.loads(response.body)['data']['results']
         if rows:
+            #假定前后不会完成一样
+            list_body_md5 = hashlib.md5(json.dumps(rows).encode("utf-8")).hexdigest()
+            if 'list_body_md5' in response.meta and response.meta['list_body_md5']==list_body_md5:
+                return
             #详页
             for row in rows:
                 dont_filter = False
                 next_url = row['positionURL']
-                meta = {"company": row['company']['name']}
+                meta = {"company": row['company']['name'],'list_body_md5':list_body_md5,'task_id':response.meta['task_id']}
                 req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta=meta)
                 yield req
             #翻页
@@ -362,10 +373,129 @@ class ZhaopinSearchJsonNext(object):
                 start=60
             else:
                 start=int(parse_qs(next_url)['start'][0])+60
-            next_url = url_query_string_update(next_url, 'start', start)
-            dont_filter = False
-            req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter)
-            yield req
+            #todo: 超页访问会给最后一页数据！
+            if start<6000:
+                next_url = url_query_string_update(next_url, 'start', start)
+                dont_filter = False
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'list_body_md5':list_body_md5,'task_id':response.meta['task_id']})
+                yield req
         
+        
+#https://hire.jobcn.com/search/result.xhtml?s=search/top&_t=1372813024629&pagename=searcherfast&ot=5&keyword1=%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6%3B%BD%E1%B9%B9%B9%A4%B3%CC%CA%A6%3B%C9%E8%BC%C6%B9%A4%B3%CC%CA%A6%3B%CF%EE%C4%BF%BE%AD%C0%ED
+class JobcnHireSearchNext(object):
+    @staticmethod
+    def extract(response,spider):
+        #print(33333, response.meta)
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        if response_body:
+            #详页
+            selector = Selector(text=response_body)
+            urls = selector.xpath('//div[@class="resume_view"]/ul/li/@data-href').extract()
+            for url in urls:
+                next_url = "https://hire.jobcn.com" + url
+                dont_filter = False
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']}, cookies=spider.settings['COOKIE'])
+                yield req
+            time.sleep(5)
+            #翻页
+            re_seed = re.match(r'.*seed:\"(?P<seed>[\d]+)\",.*',response_body,re.S)
+            re_ids = re.match(r'.*resumeIDStr:\"(?P<resumeIDStr>.*?)\",.*',response_body,re.S)
+            re_uids = re.match(r'.*pageUserIds: *\"(?P<pageUserIds>.*?)\",.*',response_body,re.S)
+            if urls and re_seed:
+                seed = re_seed.group("seed")
+#                ids = re_ids.group("resumeIDStr")
+                uids = re_uids.group("pageUserIds")
+                if seed and uids:
+                    import random
+                    dont_filter = False
+                    next_url = 'https://hire.jobcn.com/online/person/check.ujson?ids=%s&_t=%s' % (uids, random.random())
+                    req = FormRequest.from_response(response, method='GET', url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']}, cookies=spider.settings['COOKIE'])
+                    yield req
+                    time.sleep(1)
+                    #'机械工程师;结构工程师;设计工程师;项目经理'
+                    next_url = "https://hire.jobcn.com/search/result_content.uhtml?t=%s" % random.random()
+                    keyword1 = parse_qs(response.url)['keyword1'][0]
+#                    ids = ids.split(',')
+#                    ids = ids[0] + ',' + ','.join(ids[21:41])
+                    ids = ''
+#                    ids = quote(ids)
+                    formdata = {'seed': seed, 'resumeIDStr': ids, 'pageSize': '20', 'page': '2', 'pageNo': '2', 'totalRow': '1000', 'totalPage': '50', 'rsCount': '1000', 'keyword1': keyword1, 'pagename': 'searcherfast', 'imageServer': 'https://image.jobcn.com/PersonPhoto/portrait/', 'keywordType': '0', 'showEngCV': '0', 'freeResumeFlag': '0', 'nowplaceEchoId': ''}
+#                    print(222, seed, ids, next_url)
+                    headers = {'Accept-Encoding': 'br, gzip, deflate'}
+#                    print(3333, next_url, formdata, spider.settings['COOKIE'])
+#                    return;
+                    req = FormRequest.from_response(response, url=next_url, formdata=formdata, callback=spider.parse, dont_filter=dont_filter, meta={'formdata':formdata, 'task_id':response.meta['task_id']}, cookies=spider.settings['COOKIE'], headers=headers)
+#                    req = FormRequest(url=next_url, formdata=formdata, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']}, cookies={'JCNID': 'jcnc23278151680a34974569'})
+                    yield req
+        pass
 
+#https://hire.jobcn.com/search/result_content.uhtml?t=0.588325074809604&page=1&pageNo=1&totalRow=1000&totalPage=50&rsCount=1000&seed=1544082103663&keywordType=0&keyword1=机械工程师;结构工程师;设计工程师;项目经理
+class JobcnHireSearchJsonNext(object):
+    @staticmethod
+    def extract(response,spider):
+#        print(5555, response.request.headers, response.request.cookies)
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+#        print(4444, response_body)
+        if response_body:
+            #详页
+            selector = Selector(text=response_body)
+            urls = selector.xpath('//div[@class="resume_view"]/ul/li/@data-href').extract()
+            for url in urls:
+                next_url = "https://hire.jobcn.com" + url
+#                print(7777, next_url)
+                dont_filter = False
+                req = Request(url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']}, cookies=spider.settings['COOKIE'])
+                yield req
+            time.sleep(5)
+            #翻页
+            re_seed = re.match(r'.*seed:\"(?P<seed>[\d]+)\",.*',response_body,re.S)
+#            re_ids = re.match(r'.*resumeIDStr:\"(?P<resumeIDStr>.*?)\",.*',response_body,re.S)
+            re_uids = re.match(r'.*pageUserIds: *\"(?P<pageUserIds>.*?)\",.*',response_body,re.S)
+            if urls and re_seed:
+                uids = re_uids.group("pageUserIds")
+                seed = re_seed.group("seed")
+                if seed and uids:
+                    dont_filter = False
+
+                    next_url = 'https://hire.jobcn.com/online/person/check.ujson?ids=%s&_t=%s' % (uids, random.random())
+                    req = FormRequest.from_response(response, method='GET', url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']})
+                    yield req
+                    time.sleep(1)
+
+                    next_url = "https://hire.jobcn.com/search/result_content.uhtml?t=%s" % random.random()
+#                    print(4444, response.meta['formdata'])
+
+                    if response.meta['formdata']:
+                        if 'page' not in response.meta['formdata']:
+                            self.logger.error("缺少必要参数！")
+                        else:
+                            formdata = response.meta['formdata']
+
+                    formdata['page'] = str(int(response.meta['formdata']['page'])+1)
+                    formdata['pageNo'] = formdata['page']
+                    print(3333333333333333333333, formdata)
+
+                    req = FormRequest.from_response(response, url=next_url, formdata=formdata, callback=spider.parse, dont_filter=dont_filter, meta={'formdata':formdata, 'task_id':response.meta['task_id']})
+                    yield req
     
+    
+  
+
+
+

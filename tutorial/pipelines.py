@@ -29,6 +29,12 @@ class EdataPipeline(object):
 #        cls.file = open('/tmp/items.json', 'w+', encoding='utf-8')
         
     def process_item(self, item, spider):
+#        if spider.crawler.stats.get_value(item['task_id'])==0:
+#            #通知任务完成
+#            #重启爬虫
+#            from scrapy.exceptions import CloseSpider
+#            raise CloseSpider('任务结束，重启Sprider！')
+#            pass
         #todo:xxxx
         
 #        line = json.dumps(dict(item), ensure_ascii=False, sort_keys=False) + "\n"
@@ -169,6 +175,21 @@ class ZhaopinPipeline(object):
 
     def open_spider(self,spider):
         self.file = codecs.open('/tmp/zhaopin.json', 'wb', encoding='utf-8')
+        
+    def close_spider(self, spider):
+        self.file.close()
+        
+        
+class JobcnHireViewPipeline(object):
+    def process_item(self, item, spider):
+        if item.__class__.__name__=='JobcnHireViewItem':
+            line = str(item) + "\n"
+            self.file.write(line)
+            self.file.flush()
+        return item
+
+    def open_spider(self,spider):
+        self.file = codecs.open('/tmp/jobcnhire.json', 'wb', encoding='utf-8')
         
     def close_spider(self, spider):
         self.file.close()

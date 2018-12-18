@@ -237,6 +237,8 @@ class EdataSpider(RedisSpider):
 #                    item = eval(self.item_res_route[k]['item']+'Item').extract(response)
 #                    item = globals()[self.item_res_route[k]['item']+'Item'].extract(response)
                     item = getattr(sys.modules[__name__], self.item_res_route[k]['item']+'Item').extract(response)
+                    if 'task_id' in item and 'task_id' in response.meta:
+                        item['task_id'] = response.meta['task_id']
                     self.item_res_route_key = k #todo: Deprecated
                     break
         except KeyError:
