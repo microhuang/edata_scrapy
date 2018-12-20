@@ -7,6 +7,9 @@
 
 from scrapy_redis.queue import Base
 
+#from queue import Queue
+#q = Queue()
+
 #权重轮询算法
 class PollingQueue(Base):
     """Per-spider priority queue abstraction using redis' sorted set"""
@@ -26,36 +29,45 @@ class PollingQueue(Base):
 
     #-xxyyy.zzzz
     #负分值优先级
-    def pop(self, timeout=0, response=None):
+    def pop(self, timeout=0):
         """
         Pop a request
         timeout not support in this queue class
         """
         
-        #带有分片权重的数值： 后三位表示权重，前缀用作分片策略
-        if response is not None and isinstance(response.request.priority,int) and abs(response.request.priority)>100:
-            import random
-            import sys
-            polling = int(str(int(response.request.priority))[-3:])
-            shard = int(str(int(response.request.priority))[:-3])
-#            pipe = self.server.pipeline()
-#            pipe.multi()
-            if random.randint(1, 100)<polling:
-                #当前分片、以及后续分片
-                shard1 = shard*1000 #当前分片
-#                shard2 = shard*1000-999 #当前分片
-#                shard3 = sys.maxsize #后续分片
-                shard3 = 0 #后续分片
-            else:
-                #后续分片
-                shard1 = shard*1000-999+1000 #后续分片
-#                shard3 = sys.maxsize #后续分片
-                shard3 = 0 #后续分片
-#            pipe.zrangebyscore(self.key, shard1, shard3, start=0, num=1, withscores=True).zrem(self.key, 'todo:xxx') #需要原子操作
-#            results, count = pipe.execute()
-            results, count = zrangebyscore_safe(self.server, self.key, shard1, shard3)
-            if results:
-                return self._decode_request(results[0])
+#        priority = q.get()
+##        priority = spider.crawler.stats.get_value('response_priority')
+#        #带有分片权重的数值： 后三位表示权重，前缀用作分片策略
+##        if response is not None and isinstance(response.request.priority,int) and abs(response.request.priority)>100:
+#        if spider is not None and priority>100:#todo:xxxx
+#            import random
+#            import sys
+#            polling = int(str(priority)[-3:])#todo:xxxx
+#            shard = int(str(priority)[:-3])#todo:xxxx
+##            pipe = self.server.pipeline()
+##            pipe.multi()
+#            if random.randint(1, 100)<polling:
+#                #当前分片、以及后续分片
+#                shard1 = shard*1000 #当前分片
+##                shard2 = shard*1000-999 #当前分片
+##                shard3 = sys.maxsize #后续分片
+#                shard3 = 0 #后续分片
+#            else:
+#                #后续分片
+#                shard1 = shard*1000-999+1000 #后续分片
+##                shard3 = sys.maxsize #后续分片
+#                shard3 = 0 #后续分片
+##            pipe.zrangebyscore(self.key, shard1, shard3, start=0, num=1, withscores=True).zrem(self.key, 'todo:xxx') #需要原子操作
+##            results, count = pipe.execute()
+#            results, count = zrangebyscore_safe(self.server, self.key, shard1, shard3)
+#            if results:
+##                spider.crawler.stats.set_value('response_priority',7777)#todo:xxxx
+#                q.put(7777)#todo:xxx
+#                return self._decode_request(results[0])
+            
+        results, count = _polling_safe(self.server, self.key)
+        if results is not None:
+            return self._decode_request(results[0])
                 
         #从头开始
         
@@ -65,9 +77,34 @@ class PollingQueue(Base):
         pipe.zrange(self.key, 0, 0).zremrangebyrank(self.key, 0, 0)
         results, count = pipe.execute()
         if results:
+#            spider.crawler.stats.set_value('response_priority',7777)#todo:xxxx
+            q.put(7777)#todo:xxxx
             return self._decode_request(results[0])
 
-def zrangebyscore_safe(server, key, shard1, shard3):
-    script = "local z=redis.call('zrangebyscore', KEYS[1], KEYS[2], KEYS[3], 'WITHSCORES', 'LIMIT', 0, 1); redis.call('zrem', KEYS[1], z[1]); return z"
-    result = server.register_script(script)(keys=[key, shard1, shard3])
-    return result
+    #原子操作
+    def _polling_safe(server, key):
+        script = """
+        local last_priority = redis.call('get', 'last_priority');
+        local last_s=tostring(last_priority);
+        local polling=tonumber(string.sub(last_s,-3));
+        local shard=tonumber(string.sub(last_s,1,-4));
+        if last_priority>100 then
+            local shard1=0
+            local shard3=0
+            if math.random(1,100)<polling then
+                shard1=shard*1000;
+                shard3=0
+            else
+                shard1=shard*1000-999+1000
+                shard3=0
+            end
+            local req=redis.call('zrangebyscore', KEYS[1], shard1, shard3, 'WITHSCORES', 'LIMIT', 0, 1);
+            if req then
+                redis.call('set', 'todo:req');
+                redis.call('zrem', KEYS[1], req[1]); 
+            end
+            return req
+        end
+        """
+        result = server.register_script(script)(keys=[key])
+        return result
