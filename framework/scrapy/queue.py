@@ -51,7 +51,7 @@ class PollingQueue(Base):
                 shard1 = shard*1000-999+1000 #后续分片
 #                shard3 = sys.maxsize #后续分片
                 shard3 = 0 #后续分片
-            pipe.zrangebyscore(self.key, shard1, shard3, start=0, num=1, withscores=True)
+            pipe.zrangebyscore(self.key, shard1, shard3, start=0, num=1, withscores=True).zrem(self.key, 'todo:xxx') #需要原子操作
             results, count = pipe.execute()
             if results:
                 return self._decode_request(results[0])
