@@ -68,6 +68,6 @@ class PollingQueue(Base):
             return self._decode_request(results[0])
 
 def zrangebyscore_safe(server, key, shard1, shard3):
-    script = "z=redis.call('zrangebyscore', KEYS[1], KEYS[2], KEYS[3], 'WITHSCORES', 'LIMIT', 0, 1); redis.call('zrem', KEYS[1], z); return z"
+    script = "local z=redis.call('zrangebyscore', KEYS[1], KEYS[2], KEYS[3], 'WITHSCORES', 'LIMIT', 0, 1); redis.call('zrem', KEYS[1], z[1]); return z"
     result = opener.register_script(script)(keys=[key, shard1, shard3])
     return result
