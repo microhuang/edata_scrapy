@@ -38,8 +38,8 @@ class PollingQueue(Base):
             import sys
             polling = int(str(int(response.request.priority))[-3:])
             shard = int(str(int(response.request.priority))[:-3])
-            pipe = self.server.pipeline()
-            pipe.multi()
+#            pipe = self.server.pipeline()
+#            pipe.multi()
             if random.randint(1, 100)<polling:
                 #当前分片、以及后续分片
                 shard1 = shard*1000 #当前分片
@@ -51,8 +51,9 @@ class PollingQueue(Base):
                 shard1 = shard*1000-999+1000 #后续分片
 #                shard3 = sys.maxsize #后续分片
                 shard3 = 0 #后续分片
-            pipe.zrangebyscore(self.key, shard1, shard3, start=0, num=1, withscores=True).zrem(self.key, 'todo:xxx') #需要原子操作
-            results, count = pipe.execute()
+#            pipe.zrangebyscore(self.key, shard1, shard3, start=0, num=1, withscores=True).zrem(self.key, 'todo:xxx') #需要原子操作
+#            results, count = pipe.execute()
+            results, count = zrangebyscore_safe(self.server, self.key, shard1, shard3)
             if results:
                 return self._decode_request(results[0])
                 
@@ -65,3 +66,8 @@ class PollingQueue(Base):
         results, count = pipe.execute()
         if results:
             return self._decode_request(results[0])
+
+def zrangebyscore_safe(server, key, shard1, shard3):
+    script = "z=redis.call('zrangebyscore', KEYS[1], KEYS[2], KEYS[3], 'WITHSCORES', 'LIMIT', 0, 1); redis.call('zrem', KEYS[1], z); return z"
+    result = opener.register_script(script)(keys=[key, shard1, shard3])
+    return result
