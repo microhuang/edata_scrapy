@@ -7,12 +7,46 @@
 
 from scrapy_redis.queue import Base
 
+#from . import picklecompat
+
+from scrapy.utils.serialize import ScrapyJSONEncoder
+
+import json
+
 #from queue import Queue
 #q = Queue()
+
+def key_to_json(data):
+    if isinstance(data, (bytes)):
+        return str(data)
+    return data
+
+def to_json(data):
+    if isinstance(data, dict):
+        return {key_to_json(key): to_json(data[key]) for key in data}
+    return data
+
+class BytesEncoder(ScrapyJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, bytes):
+            return str(obj, encoding='utf-8');
+        return ScrapyJSONEncoder.default(self, obj)
+
+class JsonCompat(object):
+    def loads(s):
+        return json.loads(s)
+
+    def dumps(obj):
+        return json.dumps(to_json(obj), cls=BytesEncoder)
 
 #权重轮询算法
 class PollingQueue(Base):
     """Per-spider priority queue abstraction using redis' sorted set"""
+    
+    def __init__(self, server, spider, key, serializer=None):
+        if serializer is None:
+            serializer = JsonCompat
+        super(PollingQueue, self).__init__(server, spider, key, serializer)
 
     def __len__(self):
         """Return the length of the queue"""
@@ -34,6 +68,39 @@ class PollingQueue(Base):
         Pop a request
         timeout not support in this queue class
         """
+
+        #原子操作
+        def _polling_safe(server, key):
+            script = """
+            local last_priority = redis.call('get', 'last_priority');
+            if last_priority then
+                local last_s=tostring(last_priority);
+                local polling=tonumber(string.sub(last_s,-3));
+                local shard=tonumber(string.sub(last_s,1,-4));
+                if tonumber(last_priority)>100 then
+                    local shard1=0;
+                    local shard3=0;
+                    if math.random(1,100)<polling then
+                        shard1=shard*1000;
+                        shard3=0;
+                    else
+                        shard1=shard*1000-999+1000;
+                        shard3=0;
+                    end
+                    local req=redis.call('zrangebyscore', KEYS[1], shard1, shard3, 'WITHSCORES', 'LIMIT', 0, 1);
+                    if req and req[1] then
+                        redis.call('set', 'last_priority', cjson.decode(req[1])['priority']);
+                        redis.call('zrem', KEYS[1], req[1]);
+                        return req;
+                    end
+                end
+            end
+            """
+            result = server.register_script(script)(keys=[key])
+            if result is not None:
+                return result,1
+            else:
+                return None,0
         
 #        priority = q.get()
 ##        priority = spider.crawler.stats.get_value('response_priority')
@@ -66,7 +133,7 @@ class PollingQueue(Base):
 #                return self._decode_request(results[0])
             
         results, count = _polling_safe(self.server, self.key)
-        if results is not None:
+        if results:
             return self._decode_request(results[0])
                 
         #从头开始
@@ -77,34 +144,5 @@ class PollingQueue(Base):
         pipe.zrange(self.key, 0, 0).zremrangebyrank(self.key, 0, 0)
         results, count = pipe.execute()
         if results:
-#            spider.crawler.stats.set_value('response_priority',7777)#todo:xxxx
-            q.put(7777)#todo:xxxx
             return self._decode_request(results[0])
-
-    #原子操作
-    def _polling_safe(server, key):
-        script = """
-        local last_priority = redis.call('get', 'last_priority');
-        local last_s=tostring(last_priority);
-        local polling=tonumber(string.sub(last_s,-3));
-        local shard=tonumber(string.sub(last_s,1,-4));
-        if last_priority>100 then
-            local shard1=0
-            local shard3=0
-            if math.random(1,100)<polling then
-                shard1=shard*1000;
-                shard3=0
-            else
-                shard1=shard*1000-999+1000
-                shard3=0
-            end
-            local req=redis.call('zrangebyscore', KEYS[1], shard1, shard3, 'WITHSCORES', 'LIMIT', 0, 1);
-            if req then
-                redis.call('set', 'todo:req');
-                redis.call('zrem', KEYS[1], req[1]); 
-            end
-            return req
-        end
-        """
-        result = server.register_script(script)(keys=[key])
-        return result
+        
