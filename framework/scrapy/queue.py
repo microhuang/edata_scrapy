@@ -18,13 +18,23 @@ import json
 
 def key_to_json(data):
     if isinstance(data, (bytes)):
-        return str(data)
+        return str(data,encoding='utf-8')
     return data
 
 def to_json(data):
     if isinstance(data, dict):
         return {key_to_json(key): to_json(data[key]) for key in data}
     return data
+
+#def json_to_key(data):
+#    if data.startswith("b'"):
+#        return data
+#    return data
+#
+#def json_to(data):
+#    if isinstance(data, dict):
+#        return {key_to_json(key): json_to(data[key]) for key in data}
+#    return data
 
 class BytesEncoder(ScrapyJSONEncoder):
     def default(self, obj):
@@ -35,7 +45,6 @@ class BytesEncoder(ScrapyJSONEncoder):
 class JsonCompat(object):
     def loads(s):
         return json.loads(s)
-
     def dumps(obj):
         return json.dumps(to_json(obj), cls=BytesEncoder)
 
@@ -54,6 +63,7 @@ class PollingQueue(Base):
 
     def push(self, request):
         """Push a request"""
+#        request.priority = 222097 #todo:xxxxxx
         data = self._encode_request(request)
         score = -request.priority
         # We don't use zadd method as the order of arguments change depending on
@@ -76,20 +86,21 @@ class PollingQueue(Base):
             if last_priority then
                 local last_s=tostring(last_priority);
                 local polling=tonumber(string.sub(last_s,-3));
-                local shard=tonumber(string.sub(last_s,1,-4));
-                if tonumber(last_priority)>100 then
+                local shard=math.abs(tonumber(string.sub(last_s,1,-4)));
+                if tonumber(math.abs(last_priority))>100 then
                     local shard1=0;
                     local shard3=0;
                     if math.random(1,100)<polling then
-                        shard1=shard*1000;
+                        shard1=shard*1000+999;
                         shard3=0;
                     else
-                        shard1=shard*1000-999+1000;
+                        shard1=shard*1000-1000;
                         shard3=0;
                     end
-                    local req=redis.call('zrangebyscore', KEYS[1], shard1, shard3, 'WITHSCORES', 'LIMIT', 0, 1);
+                    local req=redis.call('zrangebyscore', KEYS[1], -shard1, shard3, 'WITHSCORES', 'LIMIT', 0, 1);
                     if req and req[1] then
-                        redis.call('set', 'last_priority', cjson.decode(req[1])['priority']);
+                        -- redis.call('set', 'last_priority', cjson.decode(req[1])['priority']);
+                        redis.call('set', 'last_priority', req[2]);
                         redis.call('zrem', KEYS[1], req[1]);
                         return req;
                     end
@@ -97,6 +108,7 @@ class PollingQueue(Base):
             end
             """
             result = server.register_script(script)(keys=[key])
+#            print(8888888888, result)
             if result is not None:
                 return result,1
             else:
@@ -132,6 +144,8 @@ class PollingQueue(Base):
 #                q.put(7777)#todo:xxx
 #                return self._decode_request(results[0])
             
+        #从当前开始
+        
         results, count = _polling_safe(self.server, self.key)
         if results:
             return self._decode_request(results[0])
