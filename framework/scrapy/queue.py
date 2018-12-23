@@ -158,5 +158,7 @@ class PollingQueue(Base):
         pipe.zrange(self.key, 0, 0).zremrangebyrank(self.key, 0, 0)
         results, count = pipe.execute()
         if results:
+            if len(results)>1 and results[1]>100:
+                self.server.set('last_priority', results[1]);
             return self._decode_request(results[0])
         
