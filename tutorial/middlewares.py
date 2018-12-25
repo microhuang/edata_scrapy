@@ -7,6 +7,8 @@
 
 from scrapy import signals
 
+from scrapy.http import HtmlResponse
+
 #from scrapy.http import FormRequest
 
 from scrapy.mail import MailSender
@@ -198,6 +200,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             return request
         # 使用后释放标记，防止污染
 #        spider.request_res_route_key = None
+#        print(999999, self.browser.execute_script('return localStorage.getItem("hexin-v");'))
         return response
         
     def process_request(self, request, spider):
@@ -262,15 +265,17 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         if spider.request_res_route_key and spider.request_res_route and 'useSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['useSelenium']==True:
             self.use_selenium = True
             if not self.browser:
-                self.browser = webdriver.PhantomJS()
-                #self.browser = webdriver.Chrome()
+                #无窗
+                self.browser = webdriver.PhantomJS(executable_path=spider.settings['PHANTOMJS'])
+                #有窗
+#                self.browser = webdriver.Chrome(spider.settings['CHROMEDRIVER'])
                 self.wait = WebDriverWait(self.browser, 25)
                 #self.use_selenium = True
         else:
             self.use_selenium = False
         if self.use_selenium:
             try:
-                spider.browser.get(request.url)
+                self.browser.get(request.url)
             except Exception as e:
                 return HtmlResponse(url=request.url, status=500, request=request)
             else:
