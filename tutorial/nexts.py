@@ -471,7 +471,7 @@ class JobcnHireSearchJsonNext(object):
             except:
                 response_body = str(response.body, encoding='gb2312')
             pass
-        print(4444, response_body)
+#        print(4444, response_body)
 #        return
         if response_body:
             #详页
@@ -522,7 +522,183 @@ class JobcnHireSearchJsonNext(object):
 #            FormRequest(url=next_url, method='POST', formdata=formdata, callback=spider.parse, dont_filter=dont_filter, meta={'formdata':formdata, 'task_id':response.meta['task_id']})
             
     
+#https://ehire.51job.com/
+class Job51HireIndexNext(object):
+    @staticmethod
+    def extract(response,spider):
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+#        print(888888, response_body)
+        next_url = 'https://ehire.51job.com/Candidate/SearchResumeIndexNew.aspx'
+        COOKIE = {
+            'AccessKey':'d6d9ed7affd143f',
+            'HRUSERINFO':'CtmID=3938869&DBID=4&MType=02&HRUID=5240143&UserAUTHORITY=1100111011&IsCtmLevle=1&UserName=%e4%b8%89%e6%b3%b0%e4%bf%a1%e6%81%af&IsStandard=0&LoginTime=12%2f23%2f2018+15%3a55%3a39&ExpireTime=12%2f23%2f2018+16%3a05%3a39&CtmAuthen=0000011000000001000110010000000011100001&BIsAgreed=true&IsResetPwd=0&CtmLiscense=3&AccessKey=291f3eb3ff905f7f',
+            'LangType':'Lang=&Flag=1',
+            'ASP.NET_SessionId':'pzcfwhsibi0xt0b0b05w2vxz',
+            '51job':'cenglish%3D0%26%7C%26',
+            'nsearch':'jobarea%3D%26%7C%26ord_field%3D%26%7C%26recentSearch0%3D%26%7C%26recentSearch1%3D%26%7C%26recentSearch2%3D%26%7C%26recentSearch3%3D%26%7C%26recentSearch4%3D%26%7C%26collapse_expansion%3D',
+            'search':'jobarea%7E%60000000%7C%21ord_field%7E%600%7C%21recentSearch0%7E%601%A1%FB%A1%FA000000%2C00%A1%FB%A1%FA000000%A1%FB%A1%FA0000%A1%FB%A1%FA00%A1%FB%A1%FA9%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA%CF%EE%C4%BF%BE%AD%C0%ED%A1%FB%A1%FA2%A1%FB%A1%FA%A1%FB%A1%FA-1%A1%FB%A1%FA1543034294%A1%FB%A1%FA0%A1%FB%A1%FA%A1%FB%A1%FA%7C%21recentSearch1%7E%601%A1%FB%A1%FA070000%2C00%A1%FB%A1%FA000000%A1%FB%A1%FA0000%A1%FB%A1%FA00%A1%FB%A1%FA9%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA%CF%EE%C4%BF%BE%AD%C0%ED%A1%FB%A1%FA2%A1%FB%A1%FA%A1%FB%A1%FA-1%A1%FB%A1%FA1543034250%A1%FB%A1%FA0%A1%FB%A1%FA%A1%FB%A1%FA%7C%21recentSearch2%7E%601%A1%FB%A1%FA030000%2C070000%2C00%A1%FB%A1%FA000000%A1%FB%A1%FA0000%A1%FB%A1%FA00%A1%FB%A1%FA9%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA%CF%EE%C4%BF%BE%AD%C0%ED%A1%FB%A1%FA2%A1%FB%A1%FA%A1%FB%A1%FA-1%A1%FB%A1%FA1543034229%A1%FB%A1%FA0%A1%FB%A1%FA%A1%FB%A1%FA%7C%21recentSearch3%7E%601%A1%FB%A1%FA030000%2C00%A1%FB%A1%FA000000%A1%FB%A1%FA0000%A1%FB%A1%FA00%A1%FB%A1%FA9%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA%CF%EE%C4%BF%BE%AD%C0%ED%A1%FB%A1%FA2%A1%FB%A1%FA%A1%FB%A1%FA-1%A1%FB%A1%FA1543034154%A1%FB%A1%FA0%A1%FB%A1%FA%A1%FB%A1%FA%7C%21recentSearch4%7E%601%A1%FB%A1%FA000000%2C00%A1%FB%A1%FA000000%A1%FB%A1%FA0000%A1%FB%A1%FA00%A1%FB%A1%FA9%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA99%A1%FB%A1%FA%BB%FA%D0%B5%B9%A4%B3%CC%CA%A6+%CF%EE%C4%BF%BE%AD%C0%ED%A1%FB%A1%FA2%A1%FB%A1%FA%A1%FB%A1%FA-1%A1%FB%A1%FA1542954661%A1%FB%A1%FA0%A1%FB%A1%FA%A1%FB%A1%FA%7C%21',
+            'ps':'needv%3D1',
+            'EhireGuid':'c3c8bbd02ec8438ca59c7f062a098b08',
+            'guid':'95960949b0e3dec90be4413fca014b11'
+        }
+        dont_filter = True
+        req = FormRequest.from_response(response, url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']}, cookies=COOKIE)
+        yield req
+        
+class Job51HireSearchNext(object):
+    @staticmethod
+    def extract(response,spider):
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        viewstate = response.xpath('//*[@id="__VIEWSTATE"]/@value').extract()
+#        solidworks#深圳|040000#1###一年|3#################1年及以上|7##1#0##广东省|030000#0#0#0
+#        solidworks#040000#1###3#99######99############1#0##030000#0#0#0
+        formdata = {'__VIEWSTATE':viewstate, 'search_area_hid':'深圳|040000', 'searchValueHid':'solidworks#深圳|040000#1###一年|3#################1年及以上|7##1#0##广东省|030000#0#0#0'}
+#        print(66666, viewstate)
+#        return;
+        next_url = 'https://ehire.51job.com/Candidate/SearchResumeNew.aspx'
+        dont_filter = True
+        req = FormRequest.from_response(response, url=next_url, formdata=formdata, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']})
+        yield req
     
+class Job51HirePageNext(object):
+    @staticmethod
+    def extract(response,spider):
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        lines = response.xpath('//*[@id="listDiv"]/div[3]/table/tbody/tr')
+        print(44444, lines)
+        if lines:
+            #每行
+            for line in lines:
+                href = line.xpath('td[2]/span/a/@href').extract()
+                
+                print(222222, href)
+                pass
+            #翻页
+            next_url = 'https://ehire.51job.com/Candidate/SearchResumeNew.aspx'
+            dont_filter = True
+            viewstate = response.xpath('//*[@id="__VIEWSTATE"]/@value').extract()
+            hidCheckKey = response.xpath('//*[@id="hidCheckKey"]/@value').extract()
+            hidAccessKey = response.xpath('//*[@id="hidAccessKey"]/@value').extract()
+            formdata = {
+                "__EVENTTARGET": "pagerBottomNew$nextButton",
+                '__VIEWSTATE':viewstate,
+                'ctrlSerach$search_keyword_txt':'solidworks',
+                "ctrlSerach$search_area_input": "深圳",
+                "ctrlSerach$search_area_hid": "深圳|040000",
+                "ctrlSerach$search_wyf_input": "一年",
+                "ctrlSerach$search_wyt_input": "及以上",
+                "ctrlSerach$search_expjobarea_input": "广东省",
+                "ctrlSerach$search_expjobarea_hid": "广东省|030000",
+                "ctrlSerach$search_rsmupdate_input": "1年及以上",
+                "ctrlSerach$hidSearchValue": "solidworks#深圳|040000#1###一年|3#################1年及以上|7##1#0##广东省|030000#0#0#0",
+                "ctrlSerach$hidKeyWordMind": '{"key":"solidworks","val":"|0539,0561,0523,0511,0547|14,35,02,01,33"}',
+                "ctrlSerach$hidWorkYearArea": "一年-及以上",
+                "hidAccessKey": hidAccessKey,
+                "hidCheckKey": hidCheckKey,
+                "hidKeywordCookie": "solidworks"
+            }
+            req = FormRequest.from_response(response, url=next_url, formdata=formdata, callback=spider.parse, dont_filter=dont_filter, meta={'task_id':response.meta['task_id']})
+            yield req
+            
+            
+#http://www.iwencai.com/index?tid=info&ts=1&qs=index_channel
+class IwencaiInfoNext(object):
+    @staticmethod
+    def extract(response,spider):
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        next_url = 'http://www.iwencai.com/search?typed=0&preParams=&ts=1&f=1&qs=1&selfsectsn=&querytype=&searchfilter=&tid=info&w=涨停复盘&p=1'
+        dont_filter = True
+#        if hasattr(response,'browser'):
+#            if isinstance(response.browser, dict):
+#                l = response.browser['localstorages']
+#                c = response.browser['cookies']
+#                if l:
+        if True:
+                    COOKIE = {
+                        'v': 'AtrHfIJXUvfgxN5b9gC45t-ELYL9C17l0I_SieRThm04V3A0zJuu9aAfIp23'
+                    }
+                    formdata = {
+#                        'w': '涨停复盘',
+#                        'p': '1',
+                    }
+#                    import copy
+#                    resp = copy.deepcopy(response)
+#                    resp.text = ''
+                    response = response.replace(body='')
+                    req = FormRequest.from_response(response, method='GET', formdata=formdata, url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'formdata':formdata, 'task_id':response.meta['task_id']}, cookies=COOKIE)
+                    yield req
+        
+class IwencaiSearchNext(object):
+    @staticmethod
+    def extract(response,spider):
+        response_body = ''
+        try:
+            response_body = str(response.body, encoding='utf-8')
+        except:
+            try:
+                response_body = str(response.body, encoding='gbk')
+            except:
+                response_body = str(response.body, encoding='gb2312')
+            pass
+        next_url = response.url
+#        'http://www.iwencai.com/search?typed=0&preParams=&ts=1&f=1&qs=1&selfsectsn=&querytype=&searchfilter=&tid=info&w=涨停复盘'
+        next_url = url_query_string_update(next_url, 'p', int(parse_qs(next_url)['p'][0])+1)
+#        print(55555555555, next_url)
+#        return
+        dont_filter = True
+#        if hasattr(response,'browser'):
+#            if isinstance(response.browser, dict):
+#                l = response.browser['localstorages']
+#                c = response.browser['cookies']
+#                if l:
+        if True:
+                    COOKIE = {
+                        'v': 'AtrHfIJXUvfgxN5b9gC45t-ELYL9C17l0I_SieRThm04V3A0zJuu9aAfIp23'
+                    }
+                    formdata = {
+#                        'w': '涨停复盘',
+#                        'p': str(int(response.meta['formdata']['p'])+1)
+                    }
+#                    import copy
+#                    resp = copy.deepcopy(response)
+#                    resp.text = ''
+                    response = response.replace(body='')
+                    req = FormRequest.from_response(response, method='GET', formdata=formdata, url=next_url, callback=spider.parse, dont_filter=dont_filter, meta={'formdata':formdata, 'task_id':response.meta['task_id']}, cookies=COOKIE)
+                    yield req
+                    
+            
   
 
 
