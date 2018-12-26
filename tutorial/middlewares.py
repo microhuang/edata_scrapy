@@ -284,7 +284,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             del request.meta['proxy']
             
         # Selenium
-        spider.request_res_route[spider.request_res_route_key]['selenium'] = 'PhantomJS'
+#        spider.request_res_route[spider.request_res_route_key]['selenium'] = 'PhantomJS'
         if spider.request_res_route_key and spider.request_res_route and 'selenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['selenium']:
             self.use_selenium = True
 #            if not self.browser:
