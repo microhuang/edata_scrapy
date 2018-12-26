@@ -21,6 +21,8 @@ import json
 
 import sys
 
+import importlib
+
 from tutorial.items import *
 from tutorial.nexts import *
 
@@ -121,7 +123,8 @@ class EdataSpider(RedisSpider):
             if __debug__:
                 result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as item')
             else: # -O
-                result = session.execute('select * from conf_item')
+#                result = session.execute('select * from conf_item')
+                result = session.execute('SELECT * FROM url_route where item is not null;')
             res = result.fetchall()
             if len(res)>99999:
                 self.logger.info('item_res_route过多，可能影响性能，请适度优化！')
@@ -138,7 +141,8 @@ class EdataSpider(RedisSpider):
             if __debug__:
                 result = session.execute('select "https://www.baidu.com/" as route, "www.baidu.com" as domain, "match" as type, "Baidu" as next, 1 as hasstart')
             else: # -O
-                result = session.execute('select * from conf_request')
+#                result = session.execute('select * from conf_request')
+                result = session.execute('SELECT * FROM url_route where next is not null;')
             res = result.fetchall()
             if len(res)>99999:
                 self.logger.info('item_res_route过多，可能影响性能，请适度优化！')

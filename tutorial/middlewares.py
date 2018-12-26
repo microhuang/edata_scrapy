@@ -120,6 +120,25 @@ from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 
+import asyncio
+from pyppeteer import launch
+
+async def ppeteer(url):
+#    browser = await launch({'executablePath': '/Users/1data/Downloads/Chromium.app'})
+    browser = await launch({'headless': True})
+    page = await browser.newPage()
+    await page.goto(url)
+    body = await page.content()
+    localstorages = await page.evaluate('''() => { var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l; }''')
+    cookies = await page.cookies()
+    await page.close()
+    await browser.close()
+    return body,localstorages,cookies
+
+#url = 'http://www.iwencai.com/index?tid=info&ts=1&qs=index_channel'
+#url='chrome-devtools://devtools/bundled/inspector.html'
+#asyncio.get_event_loop().run_until_complete(ppeteer(url))
+
 # ua\ip\...
 # # IP池请参考： http://pkmishra.github.io/blog/2013/03/18/how-to-run-scrapy-with-TOR-and-multiple-browser-agents-part-1-mac/
 class EdataDownloaderMiddleware(UserAgentMiddleware):
@@ -149,7 +168,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         '''
 
     def __del__(self):
-        if self.browser:
+        if self.browser and hasattr(self.browser, 'close'):
             self.browser.close()
             
     def spider_opened(self, spider):
@@ -201,9 +220,12 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         # 使用后释放标记，防止污染
 #        spider.request_res_route_key = None
 #        print(999999, self.browser.execute_script('return localStorage.getItem("hexin-v");'))
+        if self.use_selenium == True:
+            response.browser = self.browser
         return response
         
     def process_request(self, request, spider):
+#        print(444444444, request.url)
 #        print(55555, request.headers)
 #        from scrapy.exceptions import CloseSpider
 #        raise CloseSpider('任务结束，重启Sprider！')
@@ -262,24 +284,44 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             del request.meta['proxy']
             
         # Selenium
-        if spider.request_res_route_key and spider.request_res_route and 'useSelenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['useSelenium']==True:
+        spider.request_res_route[spider.request_res_route_key]['selenium'] = 'PhantomJS'
+        if spider.request_res_route_key and spider.request_res_route and 'selenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['selenium']:
             self.use_selenium = True
-            if not self.browser:
-                #无窗
-                self.browser = webdriver.PhantomJS(executable_path=spider.settings['PHANTOMJS'])
-                #有窗
-#                self.browser = webdriver.Chrome(spider.settings['CHROMEDRIVER'])
-                self.wait = WebDriverWait(self.browser, 25)
+#            if not self.browser:
+            if True:
+                if spider.request_res_route[spider.request_res_route_key]['selenium']=='PhantomJS':
+                    #无窗
+                    self.browser = webdriver.PhantomJS(executable_path=spider.settings['PHANTOMJS'],service_args=['--ignore-ssl-errors=true', '--ssl-protocol=TLSv1'])
+                elif spider.request_res_route[spider.request_res_route_key]['selenium']=='chromedriver':
+                    #有窗
+                    self.browser = webdriver.Chrome(spider.settings['CHROMEDRIVER'])
+                elif spider.request_res_route[spider.request_res_route_key]['selenium']=='ppeteer':
+                    body,localstorages,cookies = asyncio.get_event_loop().run_until_complete(ppeteer(request.url))
+                    self.browser= {"localstorages": localstorages, "cookies": cookies}
+                    self.use_browser = 'ppeteer'
+                    return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=200)
+                else:
+                    #无窗
+                    self.browser = webdriver.PhantomJS(executable_path=spider.settings['PHANTOMJS'],service_args=['--ignore-ssl-errors=true', '--ssl-protocol=TLSv1'])
                 #self.use_selenium = True
         else:
             self.use_selenium = False
         if self.use_selenium:
             try:
                 self.browser.get(request.url)
+                self.wait = WebDriverWait(self.browser, 25)
+#                time.sleep(5)
+                localstorages = self.browser.execute_script('var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l;')
+                cookies = self.browser.execute_script('return document.cookie;')
+                body = self.browser.page_source
+                self.browser.close()
+                self.browser = {"localstorages": localstorages, "cookies": cookies}
+                return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=200)
             except Exception as e:
                 return HtmlResponse(url=request.url, status=500, request=request)
-            else:
-                return HtmlResponse(url=request.url, body=self.browser.page_source, request=request, encoding='utf-8', status=200)
             
 
-    
+
+
+
+

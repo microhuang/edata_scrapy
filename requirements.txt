@@ -1,6 +1,7 @@
 scrapy
 scrapy-jsonrpc
 scrapy-redis
+pyppeteer
 
 #mysql-connector
 mysql-connector-python>=8.0.11

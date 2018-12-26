@@ -9,9 +9,9 @@ from scrapy_redis.queue import Base
 
 #from . import picklecompat
 
-from scrapy.utils.serialize import ScrapyJSONEncoder
-
 import json
+
+from scrapy.utils.serialize import ScrapyJSONEncoder
 
 #from queue import Queue
 #q = Queue()
