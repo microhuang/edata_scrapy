@@ -1,6 +1,8 @@
 scrapy
 scrapy-jsonrpc
 scrapy-redis
+scrapy-pyppeteer
+selenium
 pyppeteer
 
 #mysql-connector

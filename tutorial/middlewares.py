@@ -117,6 +117,9 @@ class TutorialDownloaderMiddleware(object):
 
 from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 
+from scrapy_pyppeteer import BrowserRequest
+from scrapy_pyppeteer import BrowserResponse
+
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -127,17 +130,23 @@ async def ppeteer(url):
 #    browser = await launch({'executablePath': '/Users/1data/Downloads/Chromium.app'})
     browser = await launch({'headless': True})
     page = await browser.newPage()
-    await page.goto(url)
+    response = await page.goto(url)
     body = await page.content()
     localstorages = await page.evaluate('''() => { var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l; }''')
     cookies = await page.cookies()
     await page.close()
     await browser.close()
-    return body,localstorages,cookies
+    return body,localstorages,cookies,response.status,response.headers
+
+def ppeteer_body(t, future):
+    return future.result
 
 #url = 'http://www.iwencai.com/index?tid=info&ts=1&qs=index_channel'
 #url='chrome-devtools://devtools/bundled/inspector.html'
 #asyncio.get_event_loop().run_until_complete(ppeteer(url))
+#task = asyncio.ensure_future(ppeteer(url))
+#task.add_done_callback(ppeteer_body)
+#asyncio.get_event_loop().run_until_complete(asyncio.ensure_future(ppeteer(url)))
 
 # ua\ip\...
 # # IP池请参考： http://pkmishra.github.io/blog/2013/03/18/how-to-run-scrapy-with-TOR-and-multiple-browser-agents-part-1-mac/
@@ -220,11 +229,13 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         # 使用后释放标记，防止污染
 #        spider.request_res_route_key = None
 #        print(999999, self.browser.execute_script('return localStorage.getItem("hexin-v");'))
-        if self.use_selenium == True:
+        if hasattr(self, 'use_selenium') and self.use_selenium == True:
             response.browser = self.browser
         return response
         
     def process_request(self, request, spider):
+        if isinstance(request, BrowserRequest):
+            return None
 #        print(444444444, request.url)
 #        print(55555, request.headers)
 #        from scrapy.exceptions import CloseSpider
@@ -283,23 +294,26 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         elif 'proxy' in request.meta:
             del request.meta['proxy']
             
+        #phantomjs、HeadlessChrome（ppeteer、chromedriver）、HeadlessFirefox
         # Selenium
-#        spider.request_res_route[spider.request_res_route_key]['selenium'] = 'PhantomJS'
+#        spider.request_res_route[spider.request_res_route_key]['selenium'] = 'pyppeteer'
         if spider.request_res_route_key and spider.request_res_route and 'selenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['selenium']:
             self.use_selenium = True
 #            if not self.browser:
             if True:
-                if spider.request_res_route[spider.request_res_route_key]['selenium']=='PhantomJS':
+                if spider.request_res_route[spider.request_res_route_key]['selenium']=='PhantomJS': #2.1.1后暂停维护
                     #无窗
                     self.browser = webdriver.PhantomJS(executable_path=spider.settings['PHANTOMJS'],service_args=['--ignore-ssl-errors=true', '--ssl-protocol=TLSv1'])
                 elif spider.request_res_route[spider.request_res_route_key]['selenium']=='chromedriver':
                     #有窗
                     self.browser = webdriver.Chrome(spider.settings['CHROMEDRIVER'])
                 elif spider.request_res_route[spider.request_res_route_key]['selenium']=='ppeteer':
-                    body,localstorages,cookies = asyncio.get_event_loop().run_until_complete(ppeteer(request.url))
+                    body,localstorages,cookies,status,headers = asyncio.get_event_loop().run_until_complete(ppeteer(request.url))
                     self.browser= {"localstorages": localstorages, "cookies": cookies}
                     self.use_browser = 'ppeteer'
-                    return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=200)
+                    return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=status, headers=headers)
+                elif spider.request_res_route[spider.request_res_route_key]['selenium'] == 'pyppeteer':
+                    return BrowserRequest(request.url, callback=spider.parse, dont_filter=True, meta=request.meta)
                 else:
                     #无窗
                     self.browser = webdriver.PhantomJS(executable_path=spider.settings['PHANTOMJS'],service_args=['--ignore-ssl-errors=true', '--ssl-protocol=TLSv1'])
@@ -314,7 +328,8 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
                 localstorages = self.browser.execute_script('var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l;')
                 cookies = self.browser.execute_script('return document.cookie;')
                 body = self.browser.page_source
-                self.browser.close()
+                if hasattr(self.browser, 'close'):
+                    self.browser.close()
                 self.browser = {"localstorages": localstorages, "cookies": cookies}
                 return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=200)
             except Exception as e:
