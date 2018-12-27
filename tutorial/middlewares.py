@@ -15,6 +15,10 @@ from scrapy.mail import MailSender
 
 import re
 
+import json
+
+from collections import OrderedDict
+
 from tutorial.nexts import *
 
 
@@ -229,7 +233,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         # 使用后释放标记，防止污染
 #        spider.request_res_route_key = None
 #        print(999999, self.browser.execute_script('return localStorage.getItem("hexin-v");'))
-        if hasattr(self, 'use_selenium') and self.use_selenium == True:
+        if self.browser is not None:
             response.browser = self.browser
         return response
         
@@ -296,7 +300,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             
         #phantomjs、HeadlessChrome（ppeteer、chromedriver）、HeadlessFirefox
         # Selenium
-#        spider.request_res_route[spider.request_res_route_key]['selenium'] = 'pyppeteer'
+#        spider.request_res_route[spider.request_res_route_key]['selenium'] = 'PhantomJS'
         if spider.request_res_route_key and spider.request_res_route and 'selenium' in spider.request_res_route[spider.request_res_route_key] and spider.request_res_route[spider.request_res_route_key]['selenium']:
             self.use_selenium = True
 #            if not self.browser:
@@ -328,12 +332,99 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
                 localstorages = self.browser.execute_script('var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l;')
                 cookies = self.browser.execute_script('return document.cookie;')
                 body = self.browser.page_source
+                har = json.loads(self.browser.get_log('har')[0]['message'])
+                headers = OrderedDict(sorted([(header["name"], header["value"]) for header in har['log']['entries'][0]['response']["headers"]], key = lambda x: x[0]))
+                status = (har['log']['entries'][0]['response']["status"], str(har['log']['entries'][0]['response']["statusText"]))
                 if hasattr(self.browser, 'close'):
                     self.browser.close()
                 self.browser = {"localstorages": localstorages, "cookies": cookies}
-                return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=200)
+                return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=200)#, headers=headers
             except Exception as e:
                 return HtmlResponse(url=request.url, status=500, request=request)
+            
+            
+            
+            
+            
+            
+import asyncio
+import logging
+from typing import Optional
+
+import pyppeteer
+from pyppeteer.browser import Browser
+from scrapy.settings import Settings
+from twisted.internet.defer import Deferred
+
+from scrapy_pyppeteer import BrowserRequest
+from scrapy_pyppeteer import BrowserResponse
+
+from scrapy.http.response import Response
+
+
+logger = logging.getLogger(__name__)
+
+
+class ScrapyPyppeteerDownloaderMiddleware(object):
+    """ Handles launching browser tabs, acts as a downloader.
+    Probably eventually this should be moved to scrapy core as a downloader.
+    """
+    def __init__(self, settings: Settings):
+        self._browser: Optional[Browser] = None
+        self._launch_options = settings.getdict('PYPPETEER_LAUNCH') or {}
+        self.browser = None
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+    
+    def process_response(self, request, response, spider):
+        if self.browser is not None:
+            response.browser = self.browser
+        return response
+
+    def process_request(self, request, spider):
+        if isinstance(request, BrowserRequest):
+            return _aio_as_deferred(self.process_browser_request(request))
+        else:
+            return request
+
+    async def process_browser_request(self, request: BrowserRequest):
+        if self._browser is None:
+            self._browser = await pyppeteer.launch(**self._launch_options)
+        page = await self._browser.newPage()
+        n_tabs = _n_browser_tabs(self._browser)
+        logger.debug(f'{n_tabs} tabs open')
+        if request.is_blank:
+            url = request.url
+            return BrowserResponse(url=url, browser_tab=page)
+        else:
+            response = await page.goto(request.url)
+            url = page.url
+            # TODO set status and headers
+            body = await page.content()
+            body = body.encode('UTF-8')
+            localstorages = await page.evaluate('''() => { var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l; }''')
+            cookies = await page.cookies()
+            self.browser= {"localstorages": localstorages, "cookies": cookies}
+            response = BrowserResponse(url=url, browser_tab=page, body=body, status=response.status, headers=response.headers)
+            return response
+
+
+def _n_browser_tabs(browser: Browser) -> int:
+    """ A quick way to get the number of browser tabs.
+    """
+    n_tabs = 0
+    for context in browser.browserContexts:
+        for target in context.targets():
+            if target.type == 'page':
+                n_tabs += 1
+    return n_tabs
+
+
+def _aio_as_deferred(f):
+    return Deferred.fromFuture(asyncio.ensure_future(f))
+            
             
 
 
