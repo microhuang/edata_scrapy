@@ -407,7 +407,7 @@ class ScrapyPyppeteerDownloaderMiddleware(object):
             localstorages = await page.evaluate('''() => { var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l; }''')
             cookies = await page.cookies()
             self.browser= {"localstorages": localstorages, "cookies": cookies}
-            response = BrowserResponse(url=url, browser_tab=page, body=body, status=response.status, headers=response.headers)
+            response = BrowserResponse(url=url, browser_tab=page, body=body, status=response.status)#todo: , headers=response.headers
             return response
 
 
