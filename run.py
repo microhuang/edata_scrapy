@@ -114,13 +114,15 @@ boot_dir = os.path.join(current_dir, 'framework/bootstrap')
 def main():
     args = sys.argv[1:]
     args.insert(0, '_scrapy.py')
-    args.insert(0, '-O') #todo:-O参数获取不到
+    if not __debug__:
+        args.insert(0, '-O')
     os.environ['PYTHONPATH'] = boot_dir
     # 执行后面的 python 程序命令
     # sys.executable 是 python 解释器程序的绝对路径 ``which python``
     # >>> sys.executable
     # '/usr/local/var/pyenv/versions/3.5.1/bin/python3.5'
-#    print(sys.argv)
+#    print(args)
+#    return
     os.execl(sys.executable, sys.executable, *args)
  
 if __name__ == '__main__':
