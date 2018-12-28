@@ -238,9 +238,9 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
         return response
         
     def process_request(self, request, spider):
+#        print(444444444, request.url)
         if isinstance(request, BrowserRequest):
             return None
-#        print(444444444, request.url)
 #        print(55555, request.headers)
 #        from scrapy.exceptions import CloseSpider
 #        raise CloseSpider('任务结束，重启Sprider！')
@@ -406,8 +406,10 @@ class ScrapyPyppeteerDownloaderMiddleware(object):
             body = body.encode('UTF-8')
             localstorages = await page.evaluate('''() => { var l = {}; for(var i=0; i<localStorage.length; i++){ l[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); } return l; }''')
             cookies = await page.cookies()
+            await page.close()#todo:
             self.browser= {"localstorages": localstorages, "cookies": cookies}
-            response = BrowserResponse(url=url, browser_tab=page, body=body, status=response.status)#todo: , headers=response.headers
+#            response = BrowserResponse(url=url, browser_tab=page, body=body, status=response.status)#todo: , headers=response.headers
+            response = HtmlResponse(url=url, body=body, encoding='utf-8', status=200)#todo:同步？异步？   , headers=headers
             return response
 
 
