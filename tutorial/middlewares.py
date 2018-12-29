@@ -346,54 +346,45 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             
             
             
+       
+
             
-import asyncio
-import logging
-from typing import Optional
+            
+            
+from scrapy_pyppeteer import ScrapyPyppeteerDownloaderMiddleware
+from scrapy_pyppeteer.middleware import _n_browser_tabs
+
+from scrapy.http.response import Response
 
 import pyppeteer
 from pyppeteer.browser import Browser
+
 from scrapy.settings import Settings
-from twisted.internet.defer import Deferred
 
 from scrapy_pyppeteer import BrowserRequest
 from scrapy_pyppeteer import BrowserResponse
 
-from scrapy.http.response import Response
-
+import logging
 
 logger = logging.getLogger(__name__)
 
 
-class ScrapyPyppeteerDownloaderMiddleware(object):
-    """ Handles launching browser tabs, acts as a downloader.
-    Probably eventually this should be moved to scrapy core as a downloader.
-    """
+class PyppeteerDownloaderMiddleware(ScrapyPyppeteerDownloaderMiddleware):
     def __init__(self, settings: Settings):
-        self._browser: Optional[Browser] = None
-        self._launch_options = settings.getdict('PYPPETEER_LAUNCH') or {}
+        super(PyppeteerDownloaderMiddleware, self).__init__(settings)
         self.browser = None
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        return cls(crawler.settings)
     
     def process_response(self, request, response, spider):
         if self.browser is not None:
             response.browser = self.browser
         return response
-
-    def process_request(self, request, spider):
-        if isinstance(request, BrowserRequest):
-            return _aio_as_deferred(self.process_browser_request(request))
-        else:
-            return request
-
+    
     async def process_browser_request(self, request: BrowserRequest):
         if self._browser is None:
             self._browser = await pyppeteer.launch(**self._launch_options)
         page = await self._browser.newPage()
         n_tabs = _n_browser_tabs(self._browser)
+#        spider.logger.info('Spider opened: %s' % spider.name)
         logger.debug(f'{n_tabs} tabs open')
         if request.is_blank:
             url = request.url
@@ -411,22 +402,6 @@ class ScrapyPyppeteerDownloaderMiddleware(object):
 #            response = BrowserResponse(url=url, browser_tab=page, body=body, status=response.status)#todo: , headers=response.headers
             response = HtmlResponse(url=url, body=body, encoding='utf-8', status=200)#todo:同步？异步？   , headers=headers
             return response
-
-
-def _n_browser_tabs(browser: Browser) -> int:
-    """ A quick way to get the number of browser tabs.
-    """
-    n_tabs = 0
-    for context in browser.browserContexts:
-        for target in context.targets():
-            if target.type == 'page':
-                n_tabs += 1
-    return n_tabs
-
-
-def _aio_as_deferred(f):
-    return Deferred.fromFuture(asyncio.ensure_future(f))
-            
             
 
 
