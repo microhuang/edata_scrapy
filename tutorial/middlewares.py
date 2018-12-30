@@ -168,7 +168,8 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
     def __init__(self):
         self.browser = None
         
-        UserAgentMiddleware.__init__(self)
+#        UserAgentMiddleware.__init__(self)
+        super(EdataDownloaderMiddleware, self).__init__()
         
         '''
         #只在需要时初始化
@@ -308,15 +309,16 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
                 if spider.request_res_route[spider.request_res_route_key]['selenium']=='PhantomJS': #2.1.1后暂停维护
                     #无窗
                     self.browser = webdriver.PhantomJS(executable_path=spider.settings['PHANTOMJS'],service_args=['--ignore-ssl-errors=true', '--ssl-protocol=TLSv1'])
-                elif spider.request_res_route[spider.request_res_route_key]['selenium']=='chromedriver':
+                elif spider.request_res_route[spider.request_res_route_key]['selenium']=='chromedriver': #TODO:
                     #有窗
                     self.browser = webdriver.Chrome(spider.settings['CHROMEDRIVER'])
-                elif spider.request_res_route[spider.request_res_route_key]['selenium']=='ppeteer':
+                elif spider.request_res_route[spider.request_res_route_key]['selenium']=='ppeteer': #TODO:
                     body,localstorages,cookies,status,headers = asyncio.get_event_loop().run_until_complete(ppeteer(request.url))
                     self.browser= {"localstorages": localstorages, "cookies": cookies}
                     self.use_browser = 'ppeteer'
                     return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8', status=status, headers=headers)
                 elif spider.request_res_route[spider.request_res_route_key]['selenium'] == 'pyppeteer':
+                    #无窗、有窗
                     return BrowserRequest(request.url, callback=spider.parse, dont_filter=True, meta=request.meta)
                 else:
                     #无窗
@@ -352,7 +354,7 @@ class EdataDownloaderMiddleware(UserAgentMiddleware):
             
             
 from scrapy_pyppeteer import ScrapyPyppeteerDownloaderMiddleware
-from scrapy_pyppeteer.middleware import _n_browser_tabs
+from scrapy_pyppeteer.middleware import _n_browser_tabs, _aio_as_deferred
 
 from scrapy.http.response import Response
 
@@ -402,6 +404,12 @@ class PyppeteerDownloaderMiddleware(ScrapyPyppeteerDownloaderMiddleware):
 #            response = BrowserResponse(url=url, browser_tab=page, body=body, status=response.status)#todo: , headers=response.headers
             response = HtmlResponse(url=url, body=body, encoding='utf-8', status=200)#todo:同步？异步？   , headers=headers
             return response
+        
+    def process_request(self, request, spider):
+        if isinstance(request, BrowserRequest):
+            return _aio_as_deferred(self.process_browser_request(request))
+#        else:
+#            return request
             
 
 
