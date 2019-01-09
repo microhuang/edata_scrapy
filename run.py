@@ -27,8 +27,10 @@
 
 
 # python3 -O ./run.py crawl edata
-# or
+#or
 # ./run.py -O crawl edata
+#Deprecated
+# python3 -O -m scrapy crawl edata
 
 
 ## Install twisted asyncio loop
@@ -108,12 +110,12 @@ import sys
 
  
 current_dir = os.path.dirname(os.path.realpath(__file__))
-boot_dir = os.path.join(current_dir, 'framework/bootstrap')
+boot_dir = os.path.join(current_dir, 'framework/bootstrap') #探针位置
 
  
 def main():
     args = sys.argv[1:]
-    args.insert(0, '_scrapy.py')
+    args.insert(0, '_scrapy.py') #替代-m scrapy命令
     if not __debug__:
         args.insert(0, '-O')
     os.environ['PYTHONPATH'] = boot_dir
